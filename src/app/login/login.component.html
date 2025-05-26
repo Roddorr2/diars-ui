@@ -1,0 +1,46 @@
+<div class="login-background">
+  <div class="login-form" align="center">
+    <h2>INICIAR SESIÓN</h2>
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+      <label for="correo">Correo:</label>
+      <input
+        type="correo"
+        type="email"
+        placeholder="usuario@tailoy.com.pe"
+        formControlName="correo"
+      />
+      <div
+        class="error-message"
+        *ngIf="
+          loginForm.get('correo')?.invalid && loginForm.get('correo')?.touched
+        "
+      >
+        Correo inválido.
+      </div>
+
+      <label for="contrasena">Contraseña:</label>
+      <input
+        id="contrasena"
+        type="password"
+        placeholder="Contraseña"
+        formControlName="contrasena"
+      />
+      <div
+        class="error-message"
+        *ngIf="
+          loginForm.get('contrasena')?.invalid &&
+          loginForm.get('contrasena')?.touched
+        "
+      >
+        Contraseña inválida.
+      </div>
+
+      <button type="submit" [disabled]="loginForm.invalid">
+        Iniciar Sesión
+      </button>
+    </form>
+    <div *ngIf="errorMessage" class="error-message text-red-600 mt-4 text-sm">
+      {{ errorMessage }}
+    </div>
+  </div>
+</div>
