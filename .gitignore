@@ -5,7 +5,7 @@
 
 # cache
 /angular
-/.angular
+/.angular/cache
 
 # testing
 /coverage
