@@ -9,5 +9,6 @@ export interface Producto {
   subcategoria: Subcategoria;
   stock: number;
   precioUnitario: number;
+  unidadMedida: string;
   estado: boolean;
 }
