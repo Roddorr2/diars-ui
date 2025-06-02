@@ -1,1 +1,141 @@
-<p>producto works!</p>
+<div class="container">
+  <header class="header-top">
+    <button (click)="volver()" aria-label="Volver" class="btn-volver">
+      <svg
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round">
+        <polyline points="15 18 9 12 15 6"></polyline>
+      </svg>
+      <img src="/logo.png" alt="Logo Empresa" class="logo" />
+      <h1>Gestión de Productos</h1>
+    </button>
+  </header>
+
+  <!-- Botón para abrir modal -->
+  <button (click)="abrirModal()">Nuevo Producto</button>
+
+  <!-- Tabla de productos -->
+  <table border="1" cellspacing="0" cellpadding="5">
+    <thead>
+      <tr>
+        <th>Código</th>
+        <th>Nombre</th>
+        <th>Marca</th>
+        <th>Stock</th>
+        <th>Precio Unitario</th>
+        <th>Unidad</th>
+        <th>Subcategoría</th>
+        <th>Estado</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      @if (productos.length > 0) { @for (producto of productos; track
+      producto.codigo) {
+      <tr>
+        <td>{{ producto.codigo }}</td>
+        <td>{{ producto.nombre }}</td>
+        <td>{{ producto.marca }}</td>
+        <td>{{ producto.stock }}</td>
+        <td>{{ producto.precioUnitario | currency : "PEN" }}</td>
+        <td>{{ producto.unidadMedida }}</td>
+        <td>{{ producto.subcategoria.nombre }}</td>
+        <td>
+          <span [style.color]="producto.estado ? 'green' : 'red'">
+            {{ producto.estado ? "Activo" : "Inactivo" }}
+          </span>
+        </td>
+        <td>
+          <button (click)="editar(producto)">Editar</button>
+          <button (click)="cambiarEstado(producto)">
+            {{ producto.estado ? "Desactivar" : "Activar" }}
+          </button>
+        </td>
+      </tr>
+      } } @else {
+      <tr>
+        <td colspan="9">No hay productos disponibles</td>
+      </tr>
+      }
+    </tbody>
+  </table>
+
+  <!-- Modal de formulario -->
+  @if (mostrarModal) {
+  <div class="modal-backdrop">
+    <div class="modal">
+      <h2>{{ modoEdicion ? "Editar Producto" : "Registrar Producto" }}</h2>
+      <form
+        [formGroup]="formularioProducto"
+        (ngSubmit)="modoEdicion ? actualizar() : registrar()">
+        <div>
+          <label>Código:</label>
+          <input formControlName="codigo" />
+        </div>
+
+        <div>
+          <label>Nombre:</label>
+          <input formControlName="nombre" />
+        </div>
+
+        <div>
+          <label>Marca:</label>
+          <input formControlName="marca" />
+        </div>
+
+        <div>
+          <label>Descripción:</label>
+          <textarea formControlName="descripcion"></textarea>
+        </div>
+
+        <div>
+          <label>Subcategoría:</label>
+          <select formControlName="subcategoria">
+            <option [ngValue]="null">-- Seleccionar --</option>
+            @for (subcategoria of subcategorias; track subcategoria.id) {
+            <option [ngValue]="subcategoria.id">
+              {{ subcategoria.nombre }}
+            </option>
+            }
+          </select>
+        </div>
+
+        <div>
+          <label>Stock:</label>
+          <input type="number" formControlName="stock" />
+        </div>
+
+        <div>
+          <label>Precio Unitario:</label>
+          <input type="number" formControlName="precioUnitario" />
+        </div>
+
+        <div>
+          <label>Unidad de Medida:</label>
+          <input formControlName="unidadMedida" />
+        </div>
+
+        <div>
+          <label>
+            <input type="checkbox" formControlName="estado" />
+            Activo
+          </label>
+        </div>
+
+        <div class="modal-buttons">
+          <button type="submit">
+            {{ modoEdicion ? "Actualizar" : "Registrar" }}
+          </button>
+          <button type="button" (click)="cancelar()">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  }
+</div>
