@@ -1,0 +1,57 @@
+import { Injectable } from "@angular/core";
+import { HttpClient, HttpParams } from "@angular/common/http";
+import { Observable } from "rxjs";
+import { Producto } from "../models/producto.model";
+
+@Injectable({
+  providedIn: "root",
+})
+export class ProductoService {
+  private apiUrl = "http://localhost:8080/api/productos";
+
+  constructor(private http: HttpClient) {}
+
+  registrar(producto: Producto): Observable<Producto> {
+    return this.http.post<Producto>(`${this.apiUrl}`, producto);
+  }
+
+  modificar(id: number, producto: Producto): Observable<Producto> {
+    return this.http.put<Producto>(`${this.apiUrl}/${id}`, producto);
+  }
+
+  cambiarEstado(id: number, estado: boolean): Observable<void> {
+    const params = new HttpParams().set("estado", estado.toString());
+    return this.http.patch<void>(`${this.apiUrl}/${id}/estado`, null, {
+      params,
+    });
+  }
+
+  obtenerPorId(id: number): Observable<Producto> {
+    return this.http.get<Producto>(`${this.apiUrl}/${id}`);
+  }
+
+  obtenerPorCodigo(codigo: number): Observable<Producto> {
+    return this.http.get<Producto>(`${this.apiUrl}/codigo/${codigo}`);
+  }
+
+  obtenerPorMarca(marca: string): Observable<Producto> {
+    return this.http.get<Producto>(`${this.apiUrl}/marca/${marca}`);
+  }
+
+  listar(): Observable<Producto[]> {
+    return this.http.get<Producto[]>(`${this.apiUrl}`);
+  }
+
+  listarActivos(): Observable<Producto[]> {
+    return this.http.get<Producto[]>(`${this.apiUrl}/activos`);
+  }
+
+  buscarPorNombre(nombre: string): Observable<Producto[]> {
+    return this.http.get<Producto[]>(`${this.apiUrl}/nombre/${nombre}`);
+  }
+
+  existePorCodigo(codigo: number): Observable<boolean> {
+    const params = new HttpParams().set("codigo", codigo.toString());
+    return this.http.get<boolean>(`${this.apiUrl}/existe`, { params });
+  }
+}
