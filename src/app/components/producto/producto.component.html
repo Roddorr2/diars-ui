@@ -12,59 +12,73 @@
         stroke-linejoin="round">
         <polyline points="15 18 9 12 15 6"></polyline>
       </svg>
-      <img src="/logo.png" alt="Logo Empresa" class="logo" />
-      <h1>Gestión de Productos</h1>
     </button>
+    <img src="/logo.png" alt="Logo Empresa" class="logo" />
+    <h1>Gestión de Productos</h1>
   </header>
 
-  <!-- Botón para abrir modal -->
-  <button (click)="abrirModal()">Nuevo Producto</button>
+  <!-- Acciones: búsqueda y botón agregar -->
+  <div class="actions">
+    <button class="btn agregar" (click)="abrirModal()">+ Nuevo Producto</button>
+  </div>
 
   <!-- Tabla de productos -->
-  <table border="1" cellspacing="0" cellpadding="5">
-    <thead>
-      <tr>
-        <th>Código</th>
-        <th>Nombre</th>
-        <th>Marca</th>
-        <th>Stock</th>
-        <th>Precio Unitario</th>
-        <th>Unidad</th>
-        <th>Subcategoría</th>
-        <th>Estado</th>
-        <th>Acciones</th>
-      </tr>
-    </thead>
-    <tbody>
-      @if (productos.length > 0) { @for (producto of productos; track
-      producto.codigo) {
-      <tr>
-        <td>{{ producto.codigo }}</td>
-        <td>{{ producto.nombre }}</td>
-        <td>{{ producto.marca }}</td>
-        <td>{{ producto.stock }}</td>
-        <td>{{ producto.precioUnitario | currency : "PEN" }}</td>
-        <td>{{ producto.unidadMedida }}</td>
-        <td>{{ producto.subcategoria.nombre }}</td>
-        <td>
-          <span [style.color]="producto.estado ? 'green' : 'red'">
-            {{ producto.estado ? "Activo" : "Inactivo" }}
-          </span>
-        </td>
-        <td>
-          <button (click)="editar(producto)">Editar</button>
-          <button (click)="cambiarEstado(producto)">
-            {{ producto.estado ? "Desactivar" : "Activar" }}
-          </button>
-        </td>
-      </tr>
-      } } @else {
-      <tr>
-        <td colspan="9">No hay productos disponibles</td>
-      </tr>
-      }
-    </tbody>
-  </table>
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>Código</th>
+          <th>Nombre</th>
+          <th>Marca</th>
+          <th>Stock</th>
+          <th>Precio Unitario</th>
+          <th>Unidad</th>
+          <th>Subcategoría</th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        @if (productos.length > 0) { @for (producto of productos; track
+        producto.codigo) {
+        <tr>
+          <td>{{ producto.codigo }}</td>
+          <td>{{ producto.nombre }}</td>
+          <td>{{ producto.marca }}</td>
+          <td>{{ producto.stock }}</td>
+          <td>{{ producto.precioUnitario | currency : "s/." }}</td>
+          <td>{{ producto.unidadMedida }}</td>
+          <td>
+            {{
+              producto.subcategoria
+                ? producto.subcategoria.nombre
+                : "Sin categoría"
+            }}
+          </td>
+          <td>
+            <span
+              [class]="producto.estado ? 'estado-activo' : 'estado-inactivo'">
+              {{ producto.estado ? "Activo" : "Inactivo" }}
+            </span>
+          </td>
+          <td class="acciones">
+            <button class="editar" (click)="editar(producto)">✏️ Editar</button>
+            <button
+              class="eliminar"
+              (click)="cambiarEstado(producto)"
+              [class]="producto.estado ? 'desactivar' : 'activar'">
+              {{ producto.estado ? "🚫 Desactivar" : "✅ Activar" }}
+            </button>
+          </td>
+        </tr>
+        } } @else {
+        <tr>
+          <td colspan="9" class="no-data">📦 No hay productos disponibles</td>
+        </tr>
+        }
+      </tbody>
+    </table>
+  </div>
 
   <!-- Modal de formulario -->
   @if (mostrarModal) {

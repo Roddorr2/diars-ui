@@ -7,6 +7,7 @@ import { SubcategoriaService } from "./../../services/subcategoria.service";
 import { Router } from "@angular/router";
 import { ReactiveFormsModule } from "@angular/forms";
 import { CurrencyPipe } from "@angular/common";
+import { ViewEncapsulation } from "@angular/core";
 
 import Swal from "sweetalert2";
 
@@ -15,6 +16,7 @@ import Swal from "sweetalert2";
   imports: [ReactiveFormsModule, CurrencyPipe],
   templateUrl: "./producto.component.html",
   styleUrl: "./producto.component.css",
+  encapsulation: ViewEncapsulation.None,
 })
 export class ProductoComponent implements OnInit {
   productos: Producto[] = [];
@@ -40,7 +42,7 @@ export class ProductoComponent implements OnInit {
 
   inicializarFormulario(): void {
     this.formularioProducto = this.fb.group({
-      codigo: ["", Validators.required],
+      codigo: [0, Validators.required],
       nombre: ["", Validators.required],
       marca: ["", Validators.required],
       descripcion: [""],
