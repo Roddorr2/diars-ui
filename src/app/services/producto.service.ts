@@ -26,16 +26,13 @@ export class ProductoService {
     });
   }
 
+  buscarGeneral(termino: string): Observable<Producto[]> {
+    const params = new HttpParams().set('q', termino);
+    return this.http.get<Producto[]>(`${this.apiUrl}/buscar`, {params});
+  }
+
   obtenerPorId(id: number): Observable<Producto> {
     return this.http.get<Producto>(`${this.apiUrl}/${id}`);
-  }
-
-  obtenerPorCodigo(codigo: number): Observable<Producto> {
-    return this.http.get<Producto>(`${this.apiUrl}/codigo/${codigo}`);
-  }
-
-  obtenerPorMarca(marca: string): Observable<Producto> {
-    return this.http.get<Producto>(`${this.apiUrl}/marca/${marca}`);
   }
 
   listar(): Observable<Producto[]> {
@@ -44,10 +41,6 @@ export class ProductoService {
 
   listarActivos(): Observable<Producto[]> {
     return this.http.get<Producto[]>(`${this.apiUrl}/activos`);
-  }
-
-  buscarPorNombre(nombre: string): Observable<Producto[]> {
-    return this.http.get<Producto[]>(`${this.apiUrl}/nombre/${nombre}`);
   }
 
   existePorCodigo(codigo: number): Observable<boolean> {
