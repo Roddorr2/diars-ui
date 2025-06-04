@@ -9,7 +9,8 @@
         stroke="currentColor"
         stroke-width="2"
         stroke-linecap="round"
-        stroke-linejoin="round">
+        stroke-linejoin="round"
+      >
         <polyline points="15 18 9 12 15 6"></polyline>
       </svg>
     </button>
@@ -20,6 +21,13 @@
   <!-- Acciones: búsqueda y botón agregar -->
   <div class="actions">
     <button class="btn agregar" (click)="abrirModal()">+ Nuevo Producto</button>
+
+    <input
+      type="text"
+      placeholder="Buscar producto..."
+      [(ngModel)]="searchTerm"
+      (input)="filtrarProductos()"
+    />
   </div>
 
   <!-- Tabla de productos -->
@@ -39,7 +47,7 @@
         </tr>
       </thead>
       <tbody>
-        @if (productos.length > 0) { @for (producto of productos; track
+        @if (productos.length > 0) { @for (producto of productosPaginados; track
         producto.codigo) {
         <tr>
           <td>{{ producto.codigo }}</td>
@@ -52,12 +60,13 @@
             {{
               producto.subcategoria
                 ? producto.subcategoria.nombre
-                : "Sin categoría"
+                : "Sin subcategoría"
             }}
           </td>
           <td>
             <span
-              [class]="producto.estado ? 'estado-activo' : 'estado-inactivo'">
+              [class]="producto.estado ? 'estado-activo' : 'estado-inactivo'"
+            >
               {{ producto.estado ? "Activo" : "Inactivo" }}
             </span>
           </td>
@@ -66,7 +75,8 @@
             <button
               class="eliminar"
               (click)="cambiarEstado(producto)"
-              [class]="producto.estado ? 'desactivar' : 'activar'">
+              [class]="producto.estado ? 'desactivar' : 'activar'"
+            >
               {{ producto.estado ? "🚫 Desactivar" : "✅ Activar" }}
             </button>
           </td>
@@ -84,72 +94,144 @@
   @if (mostrarModal) {
   <div class="modal-backdrop">
     <div class="modal">
-      <h2>{{ modoEdicion ? "Editar Producto" : "Registrar Producto" }}</h2>
+      <div class="modal-header">
+        <h2>{{ modoEdicion ? "Editar Producto" : "Registrar Producto" }}</h2>
+      </div>
       <form
         [formGroup]="formularioProducto"
-        (ngSubmit)="modoEdicion ? actualizar() : registrar()">
-        <div>
-          <label>Código:</label>
-          <input formControlName="codigo" />
-        </div>
+        (ngSubmit)="modoEdicion ? actualizar() : registrar()"
+        class="modal-form"
+      >
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Código:</label>
+            <input class="form-group" type="number" formControlName="codigo" />
+          </div>
+          @if (formularioProducto.get('codigo')?.hasError('codigoExistente') &&
+          formularioProducto.get('codigo')?.touched) {
+          <span class="campo-invalido"
+            >Ya existe un producto con ese código</span
+          >
+          }
 
-        <div>
-          <label>Nombre:</label>
-          <input formControlName="nombre" />
-        </div>
+          <div class="form-group">
+            <label>Nombre:</label>
+            <input formControlName="nombre" />
+          </div>
+          @if (formularioProducto.get('nombre')?.hasError('required') &&
+          formularioProducto.get('nombre')?.touched) {
+          <span class="campo-invalido">El nombre es requerido</span>
+          }
 
-        <div>
-          <label>Marca:</label>
-          <input formControlName="marca" />
-        </div>
+          <div class="form-group">
+            <label>Marca:</label>
+            <input formControlName="marca" />
+          </div>
+          @if (formularioProducto.get('marca')?.hasError('required') &&
+          formularioProducto.get('marca')?.touched) {
+          <span class="campo-invalido">La marca es requerida</span>
+          }
 
-        <div>
-          <label>Descripción:</label>
-          <textarea formControlName="descripcion"></textarea>
-        </div>
+          <div class="form-group">
+            <label>Descripción:</label>
+            <textarea
+              class="form-group"
+              formControlName="descripcion"
+            ></textarea>
+          </div>
+          @if (formularioProducto.get('descripcion')?.hasError('required') &&
+          formularioProducto.get('descripcion')?.touched) {
+          <span class="campo-invalido">La descripción es requerida</span>
+          }
 
-        <div>
-          <label>Subcategoría:</label>
-          <select formControlName="subcategoria">
-            <option [ngValue]="null">-- Seleccionar --</option>
-            @for (subcategoria of subcategorias; track subcategoria.id) {
-            <option [ngValue]="subcategoria.id">
-              {{ subcategoria.nombre }}
-            </option>
-            }
-          </select>
-        </div>
+          <div class="form-group">
+            <label>Subcategoría:</label>
+            <select formControlName="subcategoria">
+              <option [ngValue]="null">-- SELECCIONAR --</option>
+              @for (subcategoria of subcategorias; track subcategoria.id) {
+              <option [ngValue]="subcategoria.id">
+                {{ subcategoria.nombre }}
+              </option>
+              }
+            </select>
+          </div>
+          @if (formularioProducto.get('subcategoria')?.hasError('required') &&
+          formularioProducto.get('subcategoria')?.touched) {
+          <span class="campo-invalido">La subcategoría es requerida</span>
+          }
 
-        <div>
-          <label>Stock:</label>
-          <input type="number" formControlName="stock" />
-        </div>
+          <div class="form-group">
+            <label>Stock:</label>
+            <input type="number" formControlName="stock" />
+          </div>
+          @if (formularioProducto.get('stock')?.hasError('required') &&
+          formularioProducto.get('stock')?.touched) {
+          <span class="campo-invalido">El stock es requerido</span>
+          }
 
-        <div>
-          <label>Precio Unitario:</label>
-          <input type="number" formControlName="precioUnitario" />
-        </div>
+          <div class="form-group">
+            <label>Precio Unitario:</label>
+            <input type="number" formControlName="precioUnitario" />
+          </div>
+          @if (formularioProducto.get('precioUnitario')?.hasError('required') &&
+          formularioProducto.get('precioUnitario')?.touched) {
+          <span class="campo-invalido">El precio unitario es requerido</span>
+          }
 
-        <div>
-          <label>Unidad de Medida:</label>
-          <input formControlName="unidadMedida" />
-        </div>
+          <div class="form-group">
+            <label>Unidad de Medida:</label>
+            <input class="form-group" formControlName="unidadMedida" />
+          </div>
+          @if (formularioProducto.get('unidadMedida')?.hasError('required') &&
+          formularioProducto.get('unidadMedida')?.touched) {
+          <span class="campo-invalido">La unidad de medida es requerida</span>
+          }
 
-        <div>
-          <label>
-            <input type="checkbox" formControlName="estado" />
-            Activo
-          </label>
-        </div>
+          <div class="form-group form-group-checkbox">
+            <label>
+              <input
+                type="checkbox"
+                [checked]="formularioProducto.get('estado')?.value"
+                disabled
+              />
+              Activo
+            </label>
+            <input type="hidden" formControlName="estado" />
+          </div>
 
-        <div class="modal-buttons">
-          <button type="submit">
-            {{ modoEdicion ? "Actualizar" : "Registrar" }}
-          </button>
-          <button type="button" (click)="cancelar()">Cancelar</button>
+          <div class="modal-footer">
+            <button type="submit" class="btn-guardar">
+              {{ modoEdicion ? "Actualizar" : "Registrar" }}
+            </button>
+            <button type="button" (click)="cancelar()" class="btn-cancelar">
+              Cancelar
+            </button>
+          </div>
         </div>
       </form>
     </div>
   </div>
+  } @if (totalPaginas > 1) {
+  <nav>
+    <ul class="pagination justify-content-center">
+      <li class="page-item" [class.disabled]="paginaActual === 1">
+        <a class="page-link" (click)="cambiarPagina(paginaActual - 1)">
+          Anterior
+        </a>
+      </li>
+      @for (pagina of paginasArray; track $index) {
+      <li class="page-item" [class.active]="paginaActual === pagina">
+        <a class="page-link" (click)="cambiarPagina(pagina)">
+          {{ pagina }}
+        </a>
+      </li>
+      }
+      <li class="page-item" [class.disabled]="paginaActual === totalPaginas">
+        <a class="page-link" (click)="cambiarPagina(paginaActual + 1)">
+          Siguiente
+        </a>
+      </li>
+    </ul>
+  </nav>
   }
 </div>
