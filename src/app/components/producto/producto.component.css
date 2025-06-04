@@ -385,7 +385,6 @@ tbody tr td[colspan="6"] {
   align-items: center;
 }
 
-/* Labels */
 .form-group label {
   font-weight: 600;
   color: #333;
@@ -393,7 +392,6 @@ tbody tr td[colspan="6"] {
   font-size: 0.95rem;
 }
 
-/* Input styles */
 .form-group input,
 .form-group select,
 .form-group textarea {
@@ -423,7 +421,7 @@ tbody tr td[colspan="6"] {
   padding: 0 32px 32px;
 }
 
-.modal-footer button {
+.modal-buttons button {
   padding: 12px 24px;
   font-weight: 600;
   font-size: 1rem;
@@ -474,4 +472,54 @@ tbody tr td[colspan="6"] {
   .modal-footer {
     padding: 16px 24px;
   }
+}
+
+.campo-invalido {
+  color: red;
+  font-size: 0.9rem;
+  margin-top: 4px;
+}
+
+.pagination {
+  display: flex;
+  list-style: none;
+  padding: 0;
+  margin-top: 1rem;
+  border-radius: 0.25rem;
+}
+
+.page-item {
+  margin: 0 4px;
+}
+
+.page-link {
+  display: block;
+  padding: 0.5rem 0.75rem;
+  color: #089151;
+  background-color: #fff;
+  border: 1px solid #dee2e6;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  text-decoration: none;
+  font-weight: 500;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.page-link:hover {
+  background-color: #fae036;
+  color: #259460;
+}
+
+.page-item.active .page-link {
+  z-index: 1;
+  color: #fff;
+  background-color: #089151aa;
+  border-color: #089151;
+}
+
+.page-item.disabled .page-link {
+  color: #6c757d;
+  pointer-events: none;
+  background-color: #f8f9fa;
+  border-color: #dee2e6;
 }
