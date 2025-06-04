@@ -14,4 +14,6 @@ export class SubcategoriaService {
   listar(): Observable<Subcategoria[]> {
     return this.http.get<Subcategoria[]>(this.apiUrl);
   }
+
+  
 }
