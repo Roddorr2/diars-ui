@@ -1,19 +1,19 @@
-import { Component } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { CommonModule } from '@angular/common';
-import { AuthService } from '../services/auth.service';
-import { ReactiveFormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Component } from "@angular/core";
+import { FormBuilder, FormGroup, Validators } from "@angular/forms";
+import { CommonModule } from "@angular/common";
+import { AuthService } from "../services/auth.service";
+import { ReactiveFormsModule } from "@angular/forms";
+import { Router } from "@angular/router";
 
 @Component({
-  selector: 'app-login',
+  selector: "app-login",
   imports: [CommonModule, ReactiveFormsModule],
-  templateUrl: './login.component.html',
-  styleUrl: './login.component.css',
+  templateUrl: "./login.component.html",
+  styleUrl: "./login.component.css",
 })
 export class LoginComponent {
   loginForm: FormGroup;
-  errorMessage: string = '';
+  errorMessage: string = "";
 
   constructor(
     private formBuilder: FormBuilder,
@@ -21,8 +21,8 @@ export class LoginComponent {
     private router: Router
   ) {
     this.loginForm = this.formBuilder.group({
-      correo: ['', [Validators.required, Validators.email]],
-      contrasena: ['', [Validators.required]],
+      correo: ["", [Validators.required, Validators.email]],
+      contrasena: ["", [Validators.required]],
     });
   }
 
@@ -32,11 +32,11 @@ export class LoginComponent {
         next: (res) => {
           this.authService.guardarToken(res.token);
           console.log(`Login exitoso ${res}`);
-          this.router.navigate(['/dashboard']);
+          this.router.navigate(["/dashboard"]);
         },
         error: (err) => {
           console.error(`Error al iniciar sesión ${err}`);
-          this.errorMessage = 'Correo o contraseña incorrectos.';
+          this.errorMessage = "Correo o contraseña incorrectos.";
         },
       });
     }
