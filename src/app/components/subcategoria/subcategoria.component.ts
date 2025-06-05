@@ -24,22 +24,25 @@ import { CategoriaService } from "../../services/categoria.service";
 })
 export class SubcategoriaComponent implements OnInit {
   subcategorias: Subcategoria[] = [];
+  subcategoriasFiltradas: Subcategoria[] = [];
   categorias: Categoria[] = [];
   formularioSubcategoria!: FormGroup;
   router = inject(Router);
   searchTerm: string = "";
 
   paginaActual = 1;
-  itemsPorPagina = 5;
+  itemsPorPagina = 10;
   totalPaginas = 0;
   paginasArray: number[] = [];
-  subcategoriasPaginados: Subcategoria[] = [];
+  subcategoriasPaginadas: Subcategoria[] = [];
 
   modoEdicion: boolean = false;
   subcategoriaSeleccionadaId?: number;
   mostrarModal: boolean = false;
 
   subcategoriaOriginal: Subcategoria | null = null;
+
+  categoriaSeleccionadaId: number | null = null;
 
   nombreUnicoValidator(): AsyncValidatorFn {
     return (control: AbstractControl) => {
@@ -77,6 +80,7 @@ export class SubcategoriaComponent implements OnInit {
     this.subcategoriaService.listar().subscribe({
       next: (subcategorias) => {
         this.subcategorias = subcategorias;
+        this.subcategoriasFiltradas = [...subcategorias];
         this.paginaActual = 1;
         this.actualizarPaginacion();
       },
@@ -135,8 +139,8 @@ export class SubcategoriaComponent implements OnInit {
 
     const subcategoriaActualizada: Subcategoria = {
       ...this.formularioSubcategoria.value,
-      subcategoria: {
-        id: this.formularioSubcategoria.value.subcategoria,
+      categoria: {
+        id: this.formularioSubcategoria.value.categoria,
       },
     };
 
@@ -176,13 +180,86 @@ export class SubcategoriaComponent implements OnInit {
     });
   }
 
-  actualizarPaginacion() {
-    // TODO: implementar paginacion
+  abrirModal(): void {
+    this.modoEdicion = false;
+    this.formularioSubcategoria.reset();
+    this.mostrarModal = true;
+    this.cargarCategorias();
+    this.subcategoriaSeleccionadaId = undefined;
   }
 
-  cancelar() {
-    // TODO: implementar cancelar
+  cancelar(): void {
+    this.formularioSubcategoria.reset();
+    this.modoEdicion = false;
+    this.subcategoriaSeleccionadaId = undefined;
+    this.mostrarModal = false;
   }
+
+  aplicarFiltros(): void {
+    let resultado = [...this.subcategorias];
+
+    if (this.categoriaSeleccionadaId !== null) {
+      resultado = resultado.filter(
+        (sub) => sub.categoria?.id === this.categoriaSeleccionadaId
+      );
+    }
+
+    const termino = this.searchTerm.trim().toLowerCase();
+    if (termino !== "") {
+      resultado = resultado.filter((sub) =>
+        sub.nombre.toLowerCase().includes(termino)
+      );
+    }
+
+    this.subcategoriasFiltradas = resultado;
+    this.paginaActual = 1;
+    this.actualizarPaginacion();
+  }
+
+  filtrarSubcategorias(): void {
+    this.aplicarFiltros();
+  }
+
+  filtrarPorCategoria(id: number | null): void {
+    console.log("ID de categoría seleccionada:", id);
+    this.categoriaSeleccionadaId = id;
+    this.aplicarFiltros();
+  }
+
+  cambiarPagina(pagina: number): void {
+    if (pagina < 1 || pagina > this.totalPaginas) return;
+    this.paginaActual = pagina;
+    this.actualizarPaginacion();
+  }
+
+  actualizarPaginacion(): void {
+    const base = this.subcategoriasFiltradas;
+
+    this.totalPaginas = Math.ceil(base.length / this.itemsPorPagina);
+    this.paginasArray = Array.from(
+      { length: this.totalPaginas },
+      (_, i) => i + 1
+    );
+
+    const inicio = (this.paginaActual - 1) * this.itemsPorPagina;
+    const fin = inicio + this.itemsPorPagina;
+
+    this.subcategoriasPaginadas = base.slice(inicio, fin);
+  }
+
+  onItemsPorPaginaChange(): void {
+    this.cambiarPagina(1);
+    this.actualizarPaginacion();
+  }
+
+  limpiarFiltros(): void {
+    this.searchTerm = "";
+    this.categoriaSeleccionadaId = null;
+    this.subcategoriasFiltradas = [...this.subcategorias];
+    this.paginaActual = 1;
+    this.actualizarPaginacion();
+  }
+
   volver() {
     this.router.navigate(["/dashboard"]);
   }

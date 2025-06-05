@@ -18,6 +18,38 @@
     <h1>Gestión de Subcategorías</h1>
   </header>
 
+  <div class="actions">
+    <button class="btn agregar" (click)="abrirModal()">
+      + Nueva Subcategoría
+    </button>
+
+    <input
+      type="text"
+      placeholder="Buscar subcategoría..."
+      [(ngModel)]="searchTerm"
+      (input)="filtrarSubcategorias()"
+    />
+
+    <label for="filtroCategoria">Filtrar por categoría:</label>
+    <select
+      id="filtroCategoria"
+      class="form-control"
+      [(ngModel)]="categoriaSeleccionadaId"
+      (ngModelChange)="filtrarPorCategoria($event)"
+    >
+      <option [ngValue]="null">Todas</option>
+      @for (categoria of categorias; track categoria.id){
+      <option [ngValue]="categoria.id">
+        {{ categoria.nombre }}
+      </option>
+      }
+    </select>
+
+    <button (click)="limpiarFiltros()" class="btn-limpiar">
+      Limpiar filtros
+    </button>
+  </div>
+
   <div class="table-container">
     <table>
       <thead>
@@ -27,7 +59,106 @@
           <th>Acciones</th>
         </tr>
       </thead>
-      <tbody></tbody>
+      <tbody>
+        @if (subcategorias.length > 0) { @for (subcategoria of
+        subcategoriasPaginadas; track subcategoria.id) {
+        <tr>
+          <td>{{ subcategoria.nombre }}</td>
+          <td>
+            {{ subcategoria.categoria.nombre || "Sin categoría" }}
+          </td>
+          <td>
+            <button class="editar" (click)="editar(subcategoria)">
+              ✏️ Editar
+            </button>
+          </td>
+        </tr>
+        } } @else {
+        <tr>
+          <td colspan="3" class="no-data">No hay subcategorías disponibles</td>
+        </tr>
+        }
+      </tbody>
     </table>
   </div>
+
+  @if (mostrarModal) {
+  <div class="modal-backdrop">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>
+          {{ modoEdicion ? "Editar Subcategoría" : "Registrar Subcategoría" }}
+        </h2>
+      </div>
+      <form
+        [formGroup]="formularioSubcategoria"
+        (ngSubmit)="modoEdicion ? actualizar() : registrar()"
+        class="modal-form"
+      >
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Nombre:</label>
+            <input type="text" formControlName="nombre" />
+
+            @if
+            (formularioSubcategoria.get('nombre')?.hasError('nombreExistente')
+            && formularioSubcategoria.get('nombre')?.touched) {
+            <span class="campo-invalido"
+              >Ya existe una subcategoría con ese nombre</span
+            >
+            }
+          </div>
+
+          <div class="form-group">
+            <label>Categoría:</label>
+            <select formControlName="categoria">
+              <option [ngValue]="null">-- SELECCIONAR --</option>
+              @for (categoria of categorias; track categoria.id) {
+              <option [ngValue]="categoria.id">{{ categoria.nombre }}</option>
+              }
+            </select>
+
+            @if (formularioSubcategoria.get('categoria')?.hasError('required')
+            && formularioSubcategoria.get('categoria')?.touched) {
+            <span class="campo-invalido">La categoría es requerida</span>
+            }
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="submit" class="btn-guardar">
+            {{ modoEdicion ? "Actualizar" : "Registrar" }}
+          </button>
+          <button type="button" (click)="cancelar()" class="btn-cancelar">
+            Cancelar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+  } @if (totalPaginas > 1) {
+  <nav>
+    <ul class="pagination justify-content-center">
+      <li class="page-item" [class.disabled]="paginaActual === 1">
+        <a class="page-link" (click)="cambiarPagina(paginaActual - 1)">
+          Anterior
+        </a>
+      </li>
+
+      @for (pagina of paginasArray; track $index) {
+      <li class="page-item" [class.active]="paginaActual === pagina">
+        <a class="page-link" (click)="cambiarPagina(pagina)">
+          {{ pagina }}
+        </a>
+      </li>
+      }
+
+      <li class="page-item" [class.disabled]="paginaActual === totalPaginas">
+        <a class="page-link" (click)="cambiarPagina(paginaActual + 1)">
+          Siguiente
+        </a>
+      </li>
+    </ul>
+  </nav>
+  }
 </div>
