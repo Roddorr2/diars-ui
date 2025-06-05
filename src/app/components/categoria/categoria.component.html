@@ -1,0 +1,128 @@
+<div class="container">
+  <header class="header-top">
+    <button (click)="volver()" aria-label="Volver" class="btn-volver">
+      <svg
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <polyline points="15 18 9 12 15 6"></polyline>
+      </svg>
+    </button>
+    <img src="/logo.png" alt="Logo Empresa" class="logo" />
+    <h1>Gestión de Categorías</h1>
+  </header>
+
+  <div class="actions">
+    <button class="btn agregar" (click)="abrirModal()">
+      + Nueva Categoría
+    </button>
+
+    <input
+      type="text"
+      placeholder="Buscar Categoría..."
+      [(ngModel)]="searchTerm"
+      (input)="filtrarCategorias()"
+    />
+  </div>
+
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        @if (categorias.length > 0) { @for (categoria of categoriasPaginadas;
+        track categoria.id) {
+        <tr>
+          <td>{{ categoria.nombre }}</td>
+          <td>
+            <button class="editar" (click)="editar(categoria)">
+              ✏️ Editar
+            </button>
+          </td>
+        </tr>
+        } } @else {
+        <tr>
+          <td colspan="2" class="no-data">No hay categorías disponibles</td>
+        </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  @if (mostrarModal) {
+  <div class="modal-backdrop">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>
+          {{ modoEdicion ? "Editar Categoría" : "Registrar Categoría" }}
+        </h2>
+      </div>
+      <form
+        [formGroup]="formularioCategoria"
+        (ngSubmit)="modoEdicion ? actualizar() : registrar()"
+        class="modal-form"
+      >
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Nombre:</label>
+            <input type="text" formControlName="nombre" />
+
+            @if (formularioCategoria.get('nombre')?.hasError('nombreExistente')
+            && formularioCategoria.get('nombre')?.touched) {
+            <span class="campo-invalido"
+              >Ya existe una subcategoría con ese nombre</span
+            >
+            } @else if (formularioCategoria.get('nombre')?.hasError('required')
+            && formularioCategoria.get('nombre')?.touched) {
+            <span class="campo-invalido">El nombre es requerido</span>
+            }
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="submit" class="btn-guardar">
+            {{ modoEdicion ? "Actualizar" : "Registrar" }}
+          </button>
+          <button type="button" (click)="cancelar()" class="btn-cancelar">
+            Cancelar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+  } @if (totalPaginas > 1) {
+  <nav>
+    <ul class="pagination justify-content-center">
+      <li class="page-item" [class.disabled]="paginaActual === 1">
+        <a class="page-link" (click)="cambiarPagina(paginaActual - 1)">
+          Anterior
+        </a>
+      </li>
+
+      @for (pagina of paginasArray; track $index) {
+      <li class="page-item" [class.active]="paginaActual === pagina">
+        <a class="page-link" (click)="cambiarPagina(pagina)">
+          {{ pagina }}
+        </a>
+      </li>
+      }
+
+      <li class="page-item" [class.disabled]="paginaActual === totalPaginas">
+        <a class="page-link" (click)="cambiarPagina(paginaActual + 1)">
+          Siguiente
+        </a>
+      </li>
+    </ul>
+  </nav>
+  }
+</div>
