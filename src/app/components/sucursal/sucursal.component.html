@@ -1,0 +1,150 @@
+<div class="container">
+  <header class="header-top">
+    <button (click)="volver()" aria-label="Volver" class="btn-volver">
+      <svg
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <polyline points="15 18 9 12 15 6"></polyline>
+      </svg>
+    </button>
+    <img src="/logo.png" alt="Logo Empresa" class="logo" />
+    <h1>Gestión de Sucursales</h1>
+  </header>
+
+  <div class="actions">
+    <button class="btn agregar" (click)="abrirModal()">+ Nueva Sucursal</button>
+
+    <input
+      type="text"
+      placeholder="Buscar Sucursal..."
+      [(ngModel)]="searchTerm"
+      (input)="filtrarSucursales()"
+    />
+  </div>
+
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>Ciudad</th>
+          <th>Direccion</th>
+          <th>Correo</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        @if (sucursales.length > 0) { @for (sucursal of sucursalesPaginadas;
+        track sucursal.id) {
+        <tr>
+          <td>{{ sucursal.ciudad ? sucursal.ciudad.toUpperCase() : "" }}</td>
+          <td>{{ sucursal.direccion }}</td>
+          <td>{{ sucursal.correo }}</td>
+          <td>
+            <button class="editar" (click)="editar(sucursal)">✏️ Editar</button>
+          </td>
+        </tr>
+        } } @else {
+        <tr>
+          <td colspan="4" class="no-data">No hay sucursales disponibles</td>
+        </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  @if (mostrarModal) {
+  <div class="modal-backdrop">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>
+          {{ modoEdicion ? "Editar Categoría" : "Registrar Categoría" }}
+        </h2>
+      </div>
+      <form
+        [formGroup]="formularioSucursal"
+        (ngSubmit)="modoEdicion ? actualizar() : registrar()"
+        class="modal-form"
+      >
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Ciudad:</label>
+            <input type="text" formControlName="ciudad" />
+            @if (formularioSucursal.get('ciudad')?.hasError('required') &&
+            formularioSucursal.get('ciudad')?.touched) {
+            <span class="campo-invalido">La ciudad es requerida</span>
+            }
+          </div>
+
+          <div class="form-group">
+            <label>Dirección:</label>
+            <textarea type="text" formControlName="direccion"></textarea>
+            @if (formularioSucursal.get('direccion')?.hasError('required') &&
+            formularioSucursal.get('direccion')?.touched) {
+            <span class="campo-invalido">La dirección es requerida</span>
+            }
+          </div>
+
+          <div class="form-group">
+            <label>Correo:</label>
+            <input type="email" formControlName="correo" />
+            @if (formularioSucursal.get('correo')?.hasError('correoExistente'))
+            {
+            <span class="campo-invalido"
+              >Ya existe una sucursal con ese correo</span
+            >
+            } @else if (formularioSucursal.get('correo')?.hasError('required')
+            && formularioSucursal.get('correo')?.touched) {
+            <span class="campo-invalido">El correo es requerido</span>
+            } @else if
+            (formularioSucursal.get('correo')?.hasError('dominioInvalido')) {
+            <span class="campo-invalido"
+              >El correo debe ser del dominio tailoy.com.pe</span
+            >
+            }
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="submit" class="btn-guardar">
+            {{ modoEdicion ? "Actualizar" : "Registrar" }}
+          </button>
+          <button type="button" (click)="cancelar()" class="btn-cancelar">
+            Cancelar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+  } @if (totalPaginas > 1) {
+  <nav>
+    <ul class="pagination justify-content-center">
+      <li class="page-item" [class.disabled]="paginaActual === 1">
+        <a class="page-link" (click)="cambiarPagina(paginaActual - 1)">
+          Anterior
+        </a>
+      </li>
+
+      @for (pagina of paginasArray; track $index) {
+      <li class="page-item" [class.active]="paginaActual === pagina">
+        <a class="page-link" (click)="cambiarPagina(pagina)">
+          {{ pagina }}
+        </a>
+      </li>
+      }
+
+      <li class="page-item" [class.disabled]="paginaActual === totalPaginas">
+        <a class="page-link" (click)="cambiarPagina(paginaActual + 1)">
+          Siguiente
+        </a>
+      </li>
+    </ul>
+  </nav>
+  }
+</div>
