@@ -91,7 +91,7 @@ export class CategoriaComponent implements OnInit {
     });
 
     Swal.fire({
-      title: "¡Registrado",
+      title: "¡Registrada!",
       text: "La categoría se registró correctamente.",
       icon: "success",
       timer: 2000,
