@@ -31,4 +31,9 @@ export class CategoriaService {
     const params = new HttpParams().set("nombre", nombre);
     return this.http.get<boolean>(`${this.apiUrl}/existe`, { params });
   }
+
+  buscarPorNombre(nombre: string): Observable<Categoria[]> {
+    const params = new HttpParams().set("nombre", nombre);
+    return this.http.get<Categoria[]>(`${this.apiUrl}/buscar`, { params });
+  }
 }

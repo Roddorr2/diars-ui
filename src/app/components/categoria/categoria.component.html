@@ -43,7 +43,7 @@
         @if (categorias.length > 0) { @for (categoria of categoriasPaginadas;
         track categoria.id) {
         <tr>
-          <td>{{ categoria.nombre }}</td>
+          <td>{{ categoria.nombre ? categoria.nombre.toUpperCase() : "" }}</td>
           <td>
             <button class="editar" (click)="editar(categoria)">
               ✏️ Editar
