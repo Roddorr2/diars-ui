@@ -1,0 +1,300 @@
+import { Component, inject, OnInit } from "@angular/core";
+import { FormBuilder, FormGroup, Validators } from "@angular/forms";
+import { Proveedor } from "./../../models/proveedor.model";
+import { ProveedorService } from "./../../services/proveedor.service";
+import { Router } from "@angular/router";
+import { ReactiveFormsModule } from "@angular/forms";
+import { FormsModule } from "@angular/forms";
+import {
+  AbstractControl,
+  AsyncValidatorFn,
+  ValidationErrors,
+} from "@angular/forms";
+import { map, debounceTime, switchMap, first } from "rxjs/operators";
+
+import Swal from "sweetalert2";
+import { of } from "rxjs";
+
+@Component({
+  selector: "app-proveedor",
+  imports: [ReactiveFormsModule, FormsModule],
+  templateUrl: "./proveedor.component.html",
+  styleUrl: "./proveedor.component.css",
+})
+export class ProveedorComponent implements OnInit {
+  proveedores: Proveedor[] = [];
+  proveedoresFiltrados: Proveedor[] = [];
+  formularioProveedor!: FormGroup;
+  router = inject(Router);
+  searchTerm: string = "";
+
+  paginaActual = 1;
+  itemsPorPagina = 10;
+  totalPaginas = 0;
+  paginasArray: number[] = [];
+  proveedoresPaginados: Proveedor[] = [];
+
+  modoEdicion: boolean = false;
+  proveedorSeleccionadoId?: number;
+  mostrarModal: boolean = false;
+
+  proveedorOriginal: Proveedor | null = null;
+
+  nombreUnicoValidator(): AsyncValidatorFn {
+    return (control: AbstractControl) => {
+      return control.valueChanges.pipe(
+        debounceTime(300),
+        switchMap((nombre: string) =>
+          this.proveedorService.existePorNombre(nombre)
+        ),
+        map((existe: boolean) => (existe ? { nombreExistente: true } : null)),
+        first()
+      );
+    };
+  }
+
+  rucUnicoValidator(): AsyncValidatorFn {
+    return (control: AbstractControl) => {
+      return control.valueChanges.pipe(
+        debounceTime(300),
+        switchMap((ruc: string) => this.proveedorService.existePorRuc(ruc)),
+        map((existe: boolean) => (existe ? { rucExistente: true } : null)),
+        first()
+      );
+    };
+  }
+
+  rucValidator(control: AbstractControl): ValidationErrors | null {
+    const ruc = control.value;
+    if (!ruc) return null;
+
+    const rucRegex = /^20[0-9]{9}$/;
+    if (!rucRegex.test(ruc)) {
+      return { rucInvalido: true };
+    }
+
+    return null;
+  }
+
+  telefonoValidator(control: AbstractControl): ValidationErrors | null {
+    const telefono = control.value;
+    if (!telefono) return null;
+
+    const regex = /^\(?(\d{2,3})\)?[-\s]?(\d{3,4})[-\s]?(\d{3,4})$/;
+
+    if (!regex.test(telefono)) {
+      return { telefonoInvalido: true };
+    }
+
+    return null;
+  }
+
+  constructor(
+    private proveedorService: ProveedorService,
+    private fb: FormBuilder
+  ) {}
+
+  ngOnInit(): void {
+    this.inicializarFormulario();
+    this.cargarProveedores();
+  }
+
+  inicializarFormulario(): void {
+    this.formularioProveedor = this.fb.group({
+      nombre: ["", [Validators.required, this.nombreUnicoValidator()]],
+      ruc: [
+        "",
+        [Validators.required, this.rucValidator],
+        [this.rucUnicoValidator()],
+      ],
+      telefono: ["", [Validators.required, this.telefonoValidator]],
+      direccion: ["", [Validators.required]],
+      estado: [true],
+    });
+  }
+
+  cargarProveedores(): void {
+    this.proveedorService.listarProveedores().subscribe({
+      next: (proveedores) => {
+        this.proveedores = proveedores;
+        this.proveedoresFiltrados = proveedores;
+        this.paginaActual = 1;
+        this.actualizarPaginacion();
+      },
+      error: (err) => console.error(err),
+    });
+  }
+
+  registrar(): void {
+    if (this.formularioProveedor.invalid) return;
+
+    const proveedor: Proveedor = {
+      ...this.formularioProveedor.value,
+    };
+    this.proveedorService.registrarProveedor(proveedor).subscribe(() => {
+      this.cargarProveedores();
+      this.cancelar();
+    });
+
+    Swal.fire({
+      title: "¡Registrado",
+      text: "El proveedor se registró correctamente.",
+      icon: "success",
+      timer: 2000,
+      showConfirmButton: false,
+      toast: true,
+      position: "top-end",
+    });
+  }
+
+  editar(proveedor: Proveedor): void {
+    this.modoEdicion = true;
+    this.proveedorSeleccionadoId = proveedor.id;
+    this.mostrarModal = true;
+
+    this.proveedorOriginal = { ...proveedor };
+
+    this.formularioProveedor.patchValue({
+      nombre: proveedor.nombre,
+      ruc: proveedor.ruc,
+      telefono: proveedor.telefono,
+      direccion: proveedor.direccion,
+      estado: proveedor.estado,
+    });
+  }
+
+  actualizar(): void {
+    if (this.formularioProveedor.invalid) return;
+
+    const proveedorActualizado: Proveedor = {
+      ...this.formularioProveedor.value,
+      sucursal: {
+        id: this.formularioProveedor.value.sucursal,
+      },
+    };
+
+    if (
+      JSON.stringify(proveedorActualizado) ===
+      JSON.stringify({
+        ...this.proveedorOriginal,
+      })
+    ) {
+      Swal.fire({
+        icon: "info",
+        title: "Sin cambios",
+        text: "No se ha realizado ninguna modificación.",
+        toast: true,
+        position: "top-end",
+        showConfirmButton: false,
+        timer: 2000,
+      });
+      return;
+    }
+
+    this.proveedorService
+      .actualizarProveedor(this.proveedorSeleccionadoId!, proveedorActualizado)
+      .subscribe(() => {
+        this.cargarProveedores();
+        this.cancelar();
+      });
+    Swal.fire({
+      title: "¡Actualizado!",
+      text: "El proveedor se actualizó correctamente.",
+      icon: "success",
+      timer: 2000,
+      showConfirmButton: false,
+      toast: true,
+      position: "top-end",
+    });
+  }
+
+  abrirModal(): void {
+    this.modoEdicion = false;
+    this.formularioProveedor.reset();
+    this.formularioProveedor.patchValue({ estado: true });
+    this.mostrarModal = true;
+    this.proveedorSeleccionadoId = undefined;
+  }
+
+  cancelar(): void {
+    this.formularioProveedor.reset();
+    this.modoEdicion = false;
+    this.proveedorSeleccionadoId = undefined;
+    this.mostrarModal = false;
+  }
+
+  cambiarEstado(proveedor: Proveedor): void {
+    const nuevoEstado = !proveedor.estado;
+    const accion = nuevoEstado ? "activa" : "desactiva";
+
+    Swal.fire({
+      title: `¿Estás seguro?`,
+      text: `Estás a punto de ${accion}r el proveedor ${proveedor.nombre}`,
+      icon: `warning`,
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: `Sí, ${accion}r`,
+      cancelButtonText: `Cancelar`,
+    }).then((result) => {
+      if (result.isConfirmed) {
+        this.proveedorService
+          .cambiarEstadoProveedor(proveedor.id!, nuevoEstado)
+          .subscribe(() => {
+            this.cargarProveedores();
+            Swal.fire({
+              title: `Éxito`,
+              text: `El proveedor fue ${accion}do correctamente`,
+              icon: `success`,
+              timer: 2000,
+              showConfirmButton: false,
+            });
+          });
+      }
+    });
+  }
+
+  filtrarProveedores(): void {
+    const termino = this.searchTerm.trim();
+
+    if (termino === "") {
+      this.cargarProveedores();
+      this.proveedoresFiltrados = [...this.proveedores];
+      return;
+    } else {
+      this.proveedorService.buscarProveedores(termino).subscribe({
+        next: (proveedores) => {
+          this.proveedoresFiltrados = proveedores;
+          this.paginaActual = 1;
+          this.actualizarPaginacion();
+        },
+        error: (err) => console.error(err),
+      });
+    }
+  }
+
+  cambiarPagina(pagina: number): void {
+    if (pagina < 1 || pagina > this.totalPaginas) return;
+    this.paginaActual = pagina;
+    this.actualizarPaginacion();
+  }
+
+  actualizarPaginacion(): void {
+    const base = this.proveedoresFiltrados;
+
+    this.totalPaginas = Math.ceil(base.length / this.itemsPorPagina);
+    this.paginasArray = Array.from(
+      { length: this.totalPaginas },
+      (_, i) => i + 1
+    );
+
+    const inicio = (this.paginaActual - 1) * this.itemsPorPagina;
+    const fin = inicio + this.itemsPorPagina;
+
+    this.proveedoresPaginados = base.slice(inicio, fin);
+  }
+
+  volver() {
+    this.router.navigate(["/dashboard"]);
+  }
+}

@@ -1,0 +1,198 @@
+<div class="container">
+  <header class="header-top">
+    <button (click)="volver()" aria-label="Volver" class="btn-volver">
+      <svg
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <polyline points="15 18 9 12 15 6"></polyline>
+      </svg>
+    </button>
+    <img src="/logo.png" alt="Logo Empresa" class="logo" />
+    <h1>Gestión de Proveedores</h1>
+  </header>
+
+  <!-- Acciones: búsqueda y botón agregar -->
+  <div class="actions">
+    <button class="btn agregar" (click)="abrirModal()">
+      + Nuevo Proveedor
+    </button>
+
+    <input
+      type="text"
+      placeholder="Buscar proveedores..."
+      [(ngModel)]="searchTerm"
+      (input)="filtrarProveedores()"
+    />
+  </div>
+
+  <!-- Tabla de productos -->
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>RUC</th>
+          <th>Teléfono</th>
+          <th>Dirección</th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        @if (proveedores.length > 0) { @for (proveedor of proveedoresPaginados;
+        track proveedor.id) {
+        <tr>
+          <td>{{ proveedor.nombre }}</td>
+          <td>{{ proveedor.ruc }}</td>
+          <td>{{ proveedor.telefono }}</td>
+          <td>{{ proveedor.direccion }}</td>
+          <td>
+            <span
+              [class]="proveedor.estado ? 'estado-activo' : 'estado-inactivo'"
+            >
+              {{ proveedor.estado ? "Activo" : "Inactivo" }}
+            </span>
+          </td>
+          <td class="acciones">
+            <button class="editar" (click)="editar(proveedor)">
+              ✏️ Editar
+            </button>
+            <button
+              class="eliminar"
+              (click)="cambiarEstado(proveedor)"
+              [class]="proveedor.estado ? 'desactivar' : 'activar'"
+            >
+              {{ proveedor.estado ? "🚫 Desactivar" : "✅ Activar" }}
+            </button>
+          </td>
+        </tr>
+        } } @else {
+        <tr>
+          <td colspan="6" class="no-data">📦 No hay proveedores disponibles</td>
+        </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Modal de formulario -->
+  @if (mostrarModal) {
+  <div class="modal-backdrop">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>{{ modoEdicion ? "Editar Proveedor" : "Registrar Proveedor" }}</h2>
+      </div>
+      <form
+        [formGroup]="formularioProveedor"
+        (ngSubmit)="modoEdicion ? actualizar() : registrar()"
+        class="modal-form"
+      >
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Nombre:</label>
+            <input class="form-group" type="text" formControlName="nombre" />
+          </div>
+          @if (formularioProveedor.get('nombre')?.hasError('nombreExistente') &&
+          formularioProveedor.get('nombre')?.touched) {
+          <span class="campo-invalido"
+            >Ya existe un proveedor con ese nombre</span
+          >
+          } @else if (formularioProveedor.get('nombre')?.hasError('required') &&
+          formularioProveedor.get('nombre')?.touched) {
+          <span class="campo-invalido">El nombre es requerido</span>
+          }
+
+          <div class="form-group">
+            <label>RUC:</label>
+            <input formControlName="ruc" />
+          </div>
+          @if (formularioProveedor.get('ruc')?.hasError('required') &&
+          formularioProveedor.get('ruc')?.touched) {
+          <span class="campo-invalido">El RUC es requerido</span>
+          } @else if (formularioProveedor.get('ruc')?.hasError('rucExistente')
+          && formularioProveedor.get('ruc')?.touched) {
+          <span class="campo-invalido">Ya existe un proveedor con ese RUC</span>
+          } @else if (formularioProveedor.get('ruc')?.hasError('rucInvalido')) {
+          <span class="campo-invalido"
+            >No es el formato correcto para un RUC</span
+          >
+          }
+
+          <div class="form-group">
+            <label>Teléfono:</label>
+            <input formControlName="telefono" />
+          </div>
+          @if (formularioProveedor.get('telefono')?.hasError('required') &&
+          formularioProveedor.get('telefono')?.touched) {
+          <span class="campo-invalido">El teléfono es requerida</span>
+          } @else if
+          (formularioProveedor.get('telefono')?.hasError('telefonoInvalido')) {
+          <span class="campo-invalido"
+            >No es el formato correcto para el teléfono</span
+          >
+          }
+
+          <div class="form-group">
+            <label>Dirección:</label>
+            <textarea class="form-group" formControlName="direccion"></textarea>
+          </div>
+          @if (formularioProveedor.get('direccion')?.hasError('required') &&
+          formularioProveedor.get('direccion')?.touched) {
+          <span class="campo-invalido">La dirección es requerida</span>
+          }
+
+          <div class="form-group form-group-checkbox">
+            <label>
+              <input
+                type="checkbox"
+                [checked]="formularioProveedor.get('estado')?.value"
+                disabled
+              />
+              Activo
+            </label>
+            <input type="hidden" formControlName="estado" />
+          </div>
+
+          <div class="modal-footer">
+            <button type="submit" class="btn-guardar">
+              {{ modoEdicion ? "Actualizar" : "Registrar" }}
+            </button>
+            <button type="button" (click)="cancelar()" class="btn-cancelar">
+              Cancelar
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+  } @if (totalPaginas > 1) {
+  <nav>
+    <ul class="pagination justify-content-center">
+      <li class="page-item" [class.disabled]="paginaActual === 1">
+        <a class="page-link" (click)="cambiarPagina(paginaActual - 1)">
+          Anterior
+        </a>
+      </li>
+      @for (pagina of paginasArray; track $index) {
+      <li class="page-item" [class.active]="paginaActual === pagina">
+        <a class="page-link" (click)="cambiarPagina(pagina)">
+          {{ pagina }}
+        </a>
+      </li>
+      }
+      <li class="page-item" [class.disabled]="paginaActual === totalPaginas">
+        <a class="page-link" (click)="cambiarPagina(paginaActual + 1)">
+          Siguiente
+        </a>
+      </li>
+    </ul>
+  </nav>
+  }
+</div>
