@@ -1,0 +1,190 @@
+<div class="container">
+  <header class="header-top">
+    <button (click)="volver()" aria-label="Volver" class="btn-volver">
+      <svg
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <polyline points="15 18 9 12 15 6"></polyline>
+      </svg>
+    </button>
+    <img src="/logo.png" alt="Logo Empresa" class="logo" />
+    <h1>Gestión de Usuarios</h1>
+  </header>
+
+  <div class="actions">
+    <button class="btn agregar" (click)="abrirModal()">
+      + Nuevo Proveedor
+    </button>
+
+    <input
+      type="text"
+      placeholder="Buscar usuarios..."
+      [(ngModel)]="searchTerm"
+      (input)="filtrarUsuarios()"
+    />
+  </div>
+
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Correo</th>
+          <th>Cargo</th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        @if (usuarios.length > 0) { @for (usuario of usuariosPaginados; track
+        usuario.id) {
+        <tr>
+          <td>{{ usuario.nombre }}</td>
+          <td>{{ usuario.correo }}</td>
+          <td>
+            {{
+              usuario.cargo ? usuario.cargo.nombre.toUpperCase() : "Sin cargo"
+            }}
+          </td>
+          <td>
+            <span
+              [class]="usuario.estado ? 'estado-activo' : 'estado-inactivo'"
+            >
+              {{ usuario.estado ? "Activo" : "Inactivo" }}
+            </span>
+          </td>
+          <td class="acciones">
+            <button class="editar" (click)="editar(usuario)">✏️ Editar</button>
+            <button
+              class="eliminar"
+              (click)="cambiarEstado(usuario)"
+              [class]="usuario.estado ? 'desactivar' : 'activar'"
+            >
+              {{ usuario.estado ? "🚫 Desactivar" : "✅ Activar" }}
+            </button>
+          </td>
+        </tr>
+        } } @else {
+        <tr>
+          <td colspan="6" class="no-data">No hay usuarios disponibles</td>
+        </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  @if (mostrarModal) {
+  <div class="modal-backdrop">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>{{ modoEdicion ? "Editar Usuario" : "Registrar Usuario" }}</h2>
+      </div>
+      <form
+        [formGroup]="formularioUsuario"
+        (ngSubmit)="modoEdicion ? actualizar() : registrar()"
+        class="modal-form"
+      >
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Nombre:</label>
+            <input class="form-group" type="text" formControlName="nombre" />
+            @if (formularioUsuario.get('nombre')?.hasError('nombreExistente') &&
+            formularioUsuario.get('nombre')?.touched) {
+            <span class="campo-invalido"
+              >Ya existe un usuario con ese nombre</span
+            >
+            } @else if (formularioUsuario.get('nombre')?.hasError('required') &&
+            formularioUsuario.get('nombre')?.touched) {
+            <span class="campo-invalido">El nombre es requerido</span>
+            }
+          </div>
+
+          <div class="form-group">
+            <label>Cargo:</label>
+            <select formControlName="cargo">
+              <option [ngValue]="null">-- SELECCIONAR --</option>
+              @for (cargo of cargos; track cargo.id) {
+              <option [ngValue]="cargo.id">
+                {{ cargo.nombre }}
+              </option>
+              }
+            </select>
+            @if (formularioUsuario.get('cargo')?.hasError('required') &&
+            formularioUsuario.get('cargo')?.touched) {
+            <span class="campo-invalido">El cargo es requerido</span>
+            }
+          </div>
+
+          <div class="form-group">
+            <label>Correo:</label>
+            <input type="email" formControlName="correo" />
+            @if (formularioUsuario.get('correo')?.hasError('correoExistente')) {
+            <span class="campo-invalido"
+              >Ya existe un usuario con ese correo</span
+            >
+            } @else if (formularioUsuario.get('correo')?.hasError('required') &&
+            formularioUsuario.get('correo')?.touched) {
+            <span class="campo-invalido">El correo es requerido</span>
+            } @else if
+            (formularioUsuario.get('correo')?.hasError('dominioInvalido')) {
+            <span class="campo-invalido"
+              >El correo debe ser del dominio tailoy.com.pe</span
+            >
+            }
+          </div>
+
+          <div class="form-group form-group-checkbox">
+            <label>
+              <input
+                type="checkbox"
+                [checked]="formularioUsuario.get('estado')?.value"
+                disabled
+              />
+              Activo
+            </label>
+            <input type="hidden" formControlName="estado" />
+          </div>
+
+          <div class="modal-footer">
+            <button type="submit" class="btn-guardar">
+              {{ modoEdicion ? "Actualizar" : "Registrar" }}
+            </button>
+            <button type="button" (click)="cancelar()" class="btn-cancelar">
+              Cancelar
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+  } @if (totalPaginas > 1) {
+  <nav>
+    <ul class="pagination justify-content-center">
+      <li class="page-item" [class.disabled]="paginaActual === 1">
+        <a class="page-link" (click)="cambiarPagina(paginaActual - 1)">
+          Anterior
+        </a>
+      </li>
+      @for (pagina of paginasArray; track $index) {
+      <li class="page-item" [class.active]="paginaActual === pagina">
+        <a class="page-link" (click)="cambiarPagina(pagina)">
+          {{ pagina }}
+        </a>
+      </li>
+      }
+      <li class="page-item" [class.disabled]="paginaActual === totalPaginas">
+        <a class="page-link" (click)="cambiarPagina(paginaActual + 1)">
+          Siguiente
+        </a>
+      </li>
+    </ul>
+  </nav>
+  }
+</div>
