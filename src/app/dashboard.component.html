@@ -1,53 +1,78 @@
-<div class="dashboard-container">
-  <div class="logo-container">
-    <img src="/logo.png" alt="Logo Tai Loy" />
+<!-- NAVBAR SUPERIOR -->
+<nav class="navbar">
+  <div class="navbar-left">
+    <img src="/logo.png" alt="Logo Tai Loy" class="navbar-logo" />
+    <span class="navbar-title">Gestión de Inventario</span>
   </div>
+  <div class="navbar-right">
+    <button (click)="cerrarSesion()" class="logout-button">
+      <span class="icon">🚪</span>
+      <span class="label">Cerrar Sesión</span>
+    </button>
+  </div>
+</nav>
 
-  <h1>Bienvenido al Sistema de Gestión de Inventario de Tai Loy</h1>
+<!-- CONTENIDO PRINCIPAL -->
+<main class="dashboard-container">
+  <section class="welcome-section">
+    <h1>Bienvenido al Sistema de Gestión de Inventario</h1>
+    <p>Selecciona una opción para comenzar</p>
+  </section>
 
-  <div class="dashboard-grid">
+  <section class="dashboard-grid">
     <button routerLink="/components/producto" class="dashboard-button">
       <div class="icon">📦</div>
-      <div class="label">Gestión de Productos</div>
+      <div class="label">Productos</div>
     </button>
 
     <button routerLink="/components/categoria" class="dashboard-button">
-      <div class="icon"></div>
-      <div class="label">Gestión de Categorías</div>
+      <div class="icon">🗂️</div>
+      <div class="label">Categorías</div>
     </button>
 
     <button routerLink="/components/subcategoria" class="dashboard-button">
-      <div class="icon"></div>
-      <div class="label">Gestión de Subcategorías</div>
+      <div class="icon">📁</div>
+      <div class="label">Subcategorías</div>
+    </button>
+
+    <button routerLink="/components/proveedor" class="dashboard-button">
+      <div class="icon">🚚</div>
+      <div class="label">Proveedores</div>
+    </button>
+
+    <button routerLink="/components/sucursal" class="dashboard-button">
+      <div class="icon">🏢</div>
+      <div class="label">Sucursales</div>
+    </button>
+
+    <button routerLink="/components/cargo" class="dashboard-button">
+      <div class="icon">🪖</div>
+      <div class="label">Cargos</div>
+    </button>
+
+    <button routerLink="/components/usuario" class="dashboard-button">
+      <div class="icon">👥</div>
+      <div class="label">Usuarios</div>
     </button>
 
     <button routerLink="/inventory/proceso-compras" class="dashboard-button">
       <div class="icon">🛒</div>
-      <div class="label">Proceso de Compras</div>
+      <div class="label">Órdenes de Compra</div>
     </button>
 
     <button routerLink="/inventory/procesar-ventas" class="dashboard-button">
       <div class="icon">💰</div>
-      <div class="label">Procesar Ventas</div>
+      <div class="label">Despachos</div>
     </button>
 
-    <button routerLink="/inventory/proveedores" class="dashboard-button">
-      <div class="icon">🏢</div>
-      <div class="label">Proveedores</div>
+    <button routerLink="/history" class="dashboard-button">
+      <div class="icon">📝</div>
+      <div class="label">Auditoría</div>
     </button>
+  </section>
+</main>
 
-    <button routerLink="/inventory/usuarios" class="dashboard-button">
-      <div class="icon">👥</div>
-      <div class="label">Usuarios y Cargos</div>
-    </button>
-
-    <button routerLink="/inventory/reportes" class="dashboard-button">
-      <div class="icon">📊</div>
-      <div class="label">Reportes</div>
-    </button>
-  </div>
-</div>
-
-<div class="footer">
+<!-- FOOTER -->
+<footer class="footer">
   <p>&copy; 2025 Tai Loy S.A. Todos los derechos reservados.</p>
-</div>
+</footer>

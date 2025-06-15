@@ -1,6 +1,7 @@
-import { Component } from "@angular/core";
+import { Component, inject } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { RouterModule } from "@angular/router";
+import { Router } from "@angular/router";
 
 @Component({
   selector: "app-dashboard",
@@ -9,4 +10,11 @@ import { RouterModule } from "@angular/router";
   templateUrl: "./dashboard.component.html",
   styleUrl: "./dashboard.component.css",
 })
-export class DashboardComponent {}
+export class DashboardComponent {
+  router = inject(Router);
+
+  cerrarSesion() {
+    localStorage.removeItem("token");
+    this.router.navigate(["/login"]);
+  }
+}
