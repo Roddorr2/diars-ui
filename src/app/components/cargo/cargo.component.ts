@@ -13,6 +13,7 @@ import { map, debounceTime, switchMap, first } from "rxjs/operators";
 
 import Swal from "sweetalert2";
 import { CargoService } from "../../services/cargo.service";
+import { of } from "rxjs";
 
 @Component({
   selector: "app-cargo",
@@ -41,6 +42,14 @@ export class CargoComponent implements OnInit {
 
   nombreUnicoValidator(): AsyncValidatorFn {
     return (control: AbstractControl) => {
+      if (
+        this.modoEdicion &&
+        this.cargoOriginal &&
+        control.value === this.cargoOriginal.nombre
+      ) {
+        return of(null);
+      }
+
       return control.valueChanges.pipe(
         debounceTime(300),
         switchMap((nombre: string) =>
@@ -147,7 +156,7 @@ export class CargoComponent implements OnInit {
       });
     Swal.fire({
       title: "¡Actualizado!",
-      text: "El cargo se actualizó correctamente.",
+      text: "La categoría se actualizó correctamente.",
       icon: "success",
       timer: 2000,
       showConfirmButton: false,
