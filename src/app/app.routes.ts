@@ -1,10 +1,7 @@
+import { HistoryComponent } from "./history/history.component";
 import { Routes } from "@angular/router";
 import { LoginComponent } from "./login/login.component";
 import { DashboardComponent } from "./dashboard.component";
-import { ProductoComponent } from "./components/producto/producto.component";
-import { SubcategoriaComponent } from "./components/subcategoria/subcategoria.component";
-import { CategoriaComponent } from "./components/categoria/categoria.component";
-
 export const routes: Routes = [
   {
     path: "",
@@ -15,17 +12,18 @@ export const routes: Routes = [
     path: "login",
     component: LoginComponent,
   },
-  { path: "dashboard", component: DashboardComponent },
   {
-    path: "components/producto",
-    component: ProductoComponent,
+    path: "dashboard",
+    component: DashboardComponent,
   },
   {
-    path: "components/subcategoria",
-    component: SubcategoriaComponent,
+    path: "components",
+    loadChildren: () =>
+      import("./components/components.routes").then((m) => m.COMPONENTS_ROUTES),
   },
   {
-    path: "components/categoria",
-    component: CategoriaComponent,
+    path: "history",
+    component: HistoryComponent,
   },
+  { path: "**", redirectTo: "dashboard" },
 ];
