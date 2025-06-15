@@ -19,9 +19,7 @@
   </header>
 
   <div class="actions">
-    <button class="btn agregar" (click)="abrirModal()">
-      + Nuevo Proveedor
-    </button>
+    <button class="btn agregar" (click)="abrirModal()">+ Nuevo Usuario</button>
 
     <input
       type="text"
@@ -29,6 +27,24 @@
       [(ngModel)]="searchTerm"
       (input)="filtrarUsuarios()"
     />
+    <label for="filtroCargo">Filtrar por cargo:</label>
+    <select
+      id="filtroCargo"
+      class="form-control"
+      [(ngModel)]="cargoSeleccionadoId"
+      (ngModelChange)="filtrarPorCargo($event)"
+    >
+      <option [ngValue]="null">Todos</option>
+      @for (cargo of cargos; track cargo.id){
+      <option [ngValue]="cargo.id">
+        {{ cargo.nombre }}
+      </option>
+      }
+    </select>
+
+    <button (click)="limpiarFiltros()" class="btn-limpiar">
+      Limpiar filtros
+    </button>
   </div>
 
   <div class="table-container">

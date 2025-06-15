@@ -10,11 +10,18 @@ import {
   AsyncValidatorFn,
   ValidationErrors,
 } from "@angular/forms";
-import { map, debounceTime, switchMap, first } from "rxjs/operators";
+import {
+  map,
+  debounceTime,
+  switchMap,
+  first,
+  catchError,
+} from "rxjs/operators";
 
 import Swal from "sweetalert2";
 import { Cargo } from "../../models/cargo.model";
 import { CargoService } from "../../services/cargo.service";
+import { EMPTY, Observable, of } from "rxjs";
 
 @Component({
   selector: "app-usuario",
@@ -42,9 +49,14 @@ export class UsuarioComponent implements OnInit {
 
   usuarioOriginal: Usuario | null = null;
 
+  usuarioActualLogueado: Usuario | null = null;
+
+  cargoSeleccionadoId: number | null = null;
+
   dominioTailoyValidator(control: AbstractControl): ValidationErrors | null {
     const email = control.value;
     if (!email) return null;
+
     const dominioRequerido = "@tailoy.com.pe";
     if (!email.endsWith(dominioRequerido)) {
       return { dominioInvalido: true };
@@ -54,12 +66,18 @@ export class UsuarioComponent implements OnInit {
 
   correoUnicoValidator(): AsyncValidatorFn {
     return (control: AbstractControl) => {
-      return control.valueChanges.pipe(
+      if (!control.value || control.value === 0) return of(null);
+      return this.usuarioService.existePorCorreo(control.value).pipe(
         debounceTime(300),
-        switchMap((correo: string) =>
-          this.usuarioService.existePorCorreo(correo)
-        ),
-        map((existe: boolean) => (existe ? { correoExistente: true } : null)),
+        map((existe: boolean) => {
+          if (
+            this.modoEdicion &&
+            this.usuarioOriginal?.correo === control.value
+          ) {
+            return null;
+          }
+          return existe ? { correoExistente: true } : null;
+        }),
         first()
       );
     };
@@ -67,12 +85,18 @@ export class UsuarioComponent implements OnInit {
 
   nombreUnicoValidator(): AsyncValidatorFn {
     return (control: AbstractControl) => {
-      return control.valueChanges.pipe(
+      if (!control.value || control.value === 0) return of(null);
+      return this.usuarioService.existePorNombre(control.value).pipe(
         debounceTime(300),
-        switchMap((nombre: string) =>
-          this.usuarioService.existePorNombre(nombre)
-        ),
-        map((existe: boolean) => (existe ? { nombreExistente: true } : null)),
+        map((existe: boolean) => {
+          if (
+            this.modoEdicion &&
+            this.usuarioOriginal?.nombre === control.value
+          ) {
+            return null;
+          }
+          return existe ? { nombreExistente: true } : null;
+        }),
         first()
       );
     };
@@ -90,6 +114,17 @@ export class UsuarioComponent implements OnInit {
     return null;
   }
 
+  soloLetrasValidator(control: AbstractControl): ValidationErrors | null {
+    const nombre = control.value;
+    if (!nombre) return null;
+
+    const regex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
+    if (!regex.test(nombre)) {
+      return { soloLetras: true };
+    }
+    return null;
+  }
+
   constructor(
     private usuarioService: UsuarioService,
     private cargoService: CargoService,
@@ -99,22 +134,56 @@ export class UsuarioComponent implements OnInit {
   ngOnInit(): void {
     this.inicializarFormulario();
     this.cargarUsuarios();
+    this.cargarCargos();
+    this.obtenerUsuarioActual();
+  }
+
+  obtenerUsuarioActual(): void {
+    this.usuarioService.obtenerUsuarioActual().subscribe({
+      next: (usuario) => {
+        this.usuarioActualLogueado = usuario;
+      },
+      error: (err) => {
+        console.error("Error al obtener usuario actual:", err);
+      },
+    });
   }
 
   inicializarFormulario(): void {
     this.formularioUsuario = this.fb.group({
-      nombre: ["", [Validators.required, this.nombreUnicoValidator()]],
+      nombre: [
+        "",
+        [Validators.required, this.soloLetrasValidator],
+        [this.nombreUnicoValidator()],
+      ],
       correo: [
         "",
-        [Validators.required, this.dominioTailoyValidator],
+        [Validators.required, Validators.email, this.dominioTailoyValidator],
         [this.correoUnicoValidator()],
       ],
+      cargo: [null, Validators.required],
       estado: [true],
     });
   }
 
   cargarCargos(): void {
-    this.cargoService.listarCargos().subscribe((data) => (this.cargos = data));
+    this.cargoService.listarCargos().subscribe({
+      next: (data) => {
+        this.cargos = data;
+      },
+      error: (err) => {
+        console.error("Error al cargar cargos:", err);
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "No se pudieron cargar los cargos",
+          toast: true,
+          position: "top-end",
+          showConfirmButton: false,
+          timer: 3000,
+        });
+      },
+    });
   }
 
   cargarUsuarios(): void {
@@ -158,32 +227,44 @@ export class UsuarioComponent implements OnInit {
     this.modoEdicion = true;
     this.usuarioSeleccionadoId = usuario.id;
     this.mostrarModal = true;
-
     this.usuarioOriginal = { ...usuario };
-
+    this.inicializarFormulario();
     this.formularioUsuario.patchValue({
       nombre: usuario.nombre,
       correo: usuario.correo,
       cargo: usuario.cargo?.id,
       estado: usuario.estado,
     });
+
+    this.cargarCargos();
   }
 
   actualizar(): void {
-    if (this.formularioUsuario.invalid) return;
+    if (this.formularioUsuario.invalid) {
+      this.formularioUsuario.markAllAsTouched();
+      return;
+    }
 
     const usuarioActualizado: Usuario = {
+      id: this.usuarioSeleccionadoId,
       ...this.formularioUsuario.value,
       cargo: {
         id: this.formularioUsuario.value.cargo,
       } as Cargo,
     };
+    const usuarioOriginalComparable = {
+      ...this.usuarioOriginal,
+      cargo: { id: this.usuarioOriginal?.cargo?.id },
+    };
+
+    const usuarioActualizadoComparable = {
+      ...usuarioActualizado,
+      cargo: { id: usuarioActualizado.cargo.id },
+    };
 
     if (
-      JSON.stringify(usuarioActualizado) ===
-      JSON.stringify({
-        ...this.usuarioOriginal,
-      })
+      JSON.stringify(usuarioActualizadoComparable) ===
+      JSON.stringify(usuarioOriginalComparable)
     ) {
       Swal.fire({
         icon: "info",
@@ -199,19 +280,33 @@ export class UsuarioComponent implements OnInit {
 
     this.usuarioService
       .actualizarUsuario(this.usuarioSeleccionadoId!, usuarioActualizado)
-      .subscribe(() => {
-        this.cargarUsuarios();
-        this.cancelar();
+      .subscribe({
+        next: () => {
+          this.cargarUsuarios();
+          this.cancelar();
+          Swal.fire({
+            title: "¡Actualizado!",
+            text: "El usuario se actualizó correctamente.",
+            icon: "success",
+            timer: 2000,
+            showConfirmButton: false,
+            toast: true,
+            position: "top-end",
+          });
+        },
+        error: (err) => {
+          console.error("Error al actualizar usuario:", err);
+          Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: "No se pudo actualizar el usuario",
+            toast: true,
+            position: "top-end",
+            showConfirmButton: false,
+            timer: 3000,
+          });
+        },
       });
-    Swal.fire({
-      title: "¡Actualizado!",
-      text: "El usuario se actualizó correctamente.",
-      icon: "success",
-      timer: 2000,
-      showConfirmButton: false,
-      toast: true,
-      position: "top-end",
-    });
   }
 
   abrirModal(): void {
@@ -231,53 +326,94 @@ export class UsuarioComponent implements OnInit {
   }
 
   cambiarEstado(usuario: Usuario): void {
+    if (
+      !usuario.estado === false &&
+      this.usuarioActualLogueado &&
+      usuario.id === this.usuarioActualLogueado.id
+    ) {
+      Swal.fire({
+        icon: "warning",
+        title: "¡Acción no permitida!",
+        text: "No puedes desactivar tu propio usuario mientras estás logueado.",
+        showConfirmButton: true,
+        confirmButtonText: "Entendido",
+      });
+      return;
+    }
+
     const nuevoEstado = !usuario.estado;
-    const accion = nuevoEstado ? "activa" : "desactiva";
+    const accion = nuevoEstado ? "activar" : "desactivar";
 
     Swal.fire({
       title: `¿Estás seguro?`,
-      text: `Estás a punto de ${accion}r el Usuario ${usuario.nombre}`,
+      text: `Estás a punto de ${accion} el usuario ${usuario.nombre}`,
       icon: `warning`,
       showCancelButton: true,
       confirmButtonColor: "#3085d6",
       cancelButtonColor: "#d33",
-      confirmButtonText: `Sí, ${accion}r`,
+      confirmButtonText: `Sí, ${accion}`,
       cancelButtonText: `Cancelar`,
     }).then((result) => {
       if (result.isConfirmed) {
-        this.usuarioService
-          .cambiarEstado(usuario.id!, nuevoEstado)
-          .subscribe(() => {
+        this.usuarioService.cambiarEstado(usuario.id!, nuevoEstado).subscribe({
+          next: () => {
             this.cargarUsuarios();
             Swal.fire({
-              title: `Éxito`,
+              title: `¡Éxito!`,
               text: `El usuario fue ${accion}do correctamente`,
               icon: `success`,
               timer: 2000,
               showConfirmButton: false,
+              toast: true,
+              position: "top-end",
             });
-          });
+          },
+          error: (err) => {
+            console.error(`Error al ${accion} usuario:`, err);
+            Swal.fire({
+              icon: "error",
+              title: "Error",
+              text: `No se pudo ${accion} el usuario`,
+              toast: true,
+              position: "top-end",
+              showConfirmButton: false,
+              timer: 3000,
+            });
+          },
+        });
       }
     });
   }
 
-  filtrarUsuarios(): void {
-    const termino = this.searchTerm.trim();
+  aplicarFiltros(): void {
+    let resultado = [...this.usuarios];
 
-    if (termino === "") {
-      this.cargarUsuarios();
-      this.usuariosFiltrados = [...this.usuarios];
-      return;
-    } else {
-      this.usuarioService.buscarPorNombreOCorreo(termino).subscribe({
-        next: (usuarios) => {
-          this.usuariosFiltrados = usuarios;
-          this.paginaActual = 1;
-          this.actualizarPaginacion();
-        },
-        error: (err) => console.error(err),
-      });
+    if (this.cargoSeleccionadoId !== null) {
+      resultado = resultado.filter(
+        (usu) => usu.cargo?.id === this.cargoSeleccionadoId
+      );
     }
+
+    const termino = this.searchTerm.trim().toLowerCase();
+    if (termino !== "") {
+      resultado = resultado.filter((sub) =>
+        sub.nombre.toLowerCase().includes(termino)
+      );
+    }
+
+    this.usuariosFiltrados = resultado;
+    this.paginaActual = 1;
+    this.actualizarPaginacion();
+  }
+
+  filtrarUsuarios(): void {
+    this.aplicarFiltros();
+  }
+
+  filtrarPorCargo(id: number | null): void {
+    console.log("ID de cargo seleccionado:", id);
+    this.cargoSeleccionadoId = id;
+    this.aplicarFiltros();
   }
 
   cambiarPagina(pagina: number): void {
@@ -299,6 +435,14 @@ export class UsuarioComponent implements OnInit {
     const fin = inicio + this.itemsPorPagina;
 
     this.usuariosPaginados = base.slice(inicio, fin);
+  }
+
+  limpiarFiltros(): void {
+    this.searchTerm = "";
+    this.cargoSeleccionadoId = null;
+    this.usuariosFiltrados = [...this.usuarios];
+    this.paginaActual = 1;
+    this.actualizarPaginacion();
   }
 
   volver() {

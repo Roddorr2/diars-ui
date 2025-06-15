@@ -52,4 +52,8 @@ export class UsuarioService {
   listarPorCargo(idCargo: number): Observable<Usuario[]> {
     return this.http.get<Usuario[]>(`${this.apiUrl}/cargo/${idCargo}`);
   }
+
+  obtenerUsuarioActual(): Observable<Usuario> {
+    return this.http.get<Usuario>(`${this.apiUrl}/actual`);
+  }
 }
