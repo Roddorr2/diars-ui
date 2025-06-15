@@ -42,12 +42,21 @@ export class ProveedorComponent implements OnInit {
 
   nombreUnicoValidator(): AsyncValidatorFn {
     return (control: AbstractControl) => {
-      return control.valueChanges.pipe(
+      if (!control.value || control.value.trim() === "") {
+        return of(null);
+      }
+
+      return this.proveedorService.existePorNombre(control.value.trim()).pipe(
+        map((existe: boolean) => {
+          if (
+            this.modoEdicion &&
+            this.proveedorOriginal?.nombre === control.value.trim()
+          ) {
+            return null;
+          }
+          return existe ? { nombreExistente: true } : null;
+        }),
         debounceTime(300),
-        switchMap((nombre: string) =>
-          this.proveedorService.existePorNombre(nombre)
-        ),
-        map((existe: boolean) => (existe ? { nombreExistente: true } : null)),
         first()
       );
     };
@@ -55,10 +64,21 @@ export class ProveedorComponent implements OnInit {
 
   rucUnicoValidator(): AsyncValidatorFn {
     return (control: AbstractControl) => {
-      return control.valueChanges.pipe(
+      if (!control.value || control.value.trim() === "") {
+        return of(null);
+      }
+
+      return this.proveedorService.existePorRuc(control.value.trim()).pipe(
+        map((existe: boolean) => {
+          if (
+            this.modoEdicion &&
+            this.proveedorOriginal?.ruc === control.value.trim()
+          ) {
+            return null;
+          }
+          return existe ? { rucExistente: true } : null;
+        }),
         debounceTime(300),
-        switchMap((ruc: string) => this.proveedorService.existePorRuc(ruc)),
-        map((existe: boolean) => (existe ? { rucExistente: true } : null)),
         first()
       );
     };
@@ -101,7 +121,7 @@ export class ProveedorComponent implements OnInit {
 
   inicializarFormulario(): void {
     this.formularioProveedor = this.fb.group({
-      nombre: ["", [Validators.required, this.nombreUnicoValidator()]],
+      nombre: ["", [Validators.required], [this.nombreUnicoValidator()]],
       ruc: [
         "",
         [Validators.required, this.rucValidator],
@@ -167,10 +187,8 @@ export class ProveedorComponent implements OnInit {
     if (this.formularioProveedor.invalid) return;
 
     const proveedorActualizado: Proveedor = {
+      id: this.proveedorSeleccionadoId,
       ...this.formularioProveedor.value,
-      sucursal: {
-        id: this.formularioProveedor.value.sucursal,
-      },
     };
 
     if (
@@ -210,16 +228,21 @@ export class ProveedorComponent implements OnInit {
 
   abrirModal(): void {
     this.modoEdicion = false;
-    this.formularioProveedor.reset();
-    this.formularioProveedor.patchValue({ estado: true });
-    this.mostrarModal = true;
+    this.proveedorOriginal = null;
     this.proveedorSeleccionadoId = undefined;
+    this.formularioProveedor.reset();
+    this.formularioProveedor.patchValue({
+      estado: true,
+    });
+
+    this.mostrarModal = true;
   }
 
   cancelar(): void {
     this.formularioProveedor.reset();
     this.modoEdicion = false;
     this.proveedorSeleccionadoId = undefined;
+    this.proveedorOriginal = null;
     this.mostrarModal = false;
   }
 
@@ -255,12 +278,10 @@ export class ProveedorComponent implements OnInit {
   }
 
   filtrarProveedores(): void {
-    const termino = this.searchTerm.trim();
+    const termino = this.searchTerm.trim().toLowerCase();
 
     if (termino === "") {
-      this.cargarProveedores();
       this.proveedoresFiltrados = [...this.proveedores];
-      return;
     } else {
       this.proveedorService.buscarProveedores(termino).subscribe({
         next: (proveedores) => {
@@ -268,9 +289,19 @@ export class ProveedorComponent implements OnInit {
           this.paginaActual = 1;
           this.actualizarPaginacion();
         },
-        error: (err) => console.error(err),
+        error: (err) => {
+          console.error("Error al buscar proveedores:", err);
+          this.proveedoresFiltrados = this.proveedores.filter(
+            (p) =>
+              p.nombre.toLowerCase().includes(termino) ||
+              p.ruc.includes(termino) ||
+              p.telefono.includes(termino)
+          );
+        },
       });
     }
+    this.paginaActual = 1;
+    this.actualizarPaginacion();
   }
 
   cambiarPagina(pagina: number): void {
