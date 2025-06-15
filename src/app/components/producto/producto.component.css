@@ -1,12 +1,12 @@
 /* Contenedor general */
 .container {
-  max-width: 960px;
+  max-width: 1200px;
   margin: 40px auto;
   background: #ffffff;
   padding: 30px 35px;
   border-radius: 16px;
   box-shadow: 0 8px 25px rgba(8, 145, 81, 0.2);
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-family: "Roboto", Tahoma, Geneva, Verdana, sans-serif;
   color: #333;
 }
 
@@ -217,9 +217,10 @@ tbody td {
   font-weight: 700;
 }
 
-button.editar {
-  padding: 8px 18px;
-  font-size: 0.9rem;
+.editar {
+  padding: 12px 50px;
+  font-size: 1.1rem;
+  font-weight: 700;
   border-radius: 10px;
   border: none;
   cursor: pointer;
@@ -246,6 +247,15 @@ tbody tr td[colspan="6"] {
 }
 
 /* Responsive */
+@media (max-width: 1240px) {
+  /* Ajustado el breakpoint para el nuevo ancho */
+  .container {
+    max-width: 95%;
+    margin: 20px auto;
+    padding: 20px 25px;
+  }
+}
+
 @media (max-width: 720px) {
   .header-top {
     flex-direction: column;

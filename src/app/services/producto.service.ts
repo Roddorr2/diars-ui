@@ -27,8 +27,8 @@ export class ProductoService {
   }
 
   buscarGeneral(termino: string): Observable<Producto[]> {
-    const params = new HttpParams().set('q', termino);
-    return this.http.get<Producto[]>(`${this.apiUrl}/buscar`, {params});
+    const params = new HttpParams().set("q", termino);
+    return this.http.get<Producto[]>(`${this.apiUrl}/buscar`, { params });
   }
 
   obtenerPorId(id: number): Observable<Producto> {

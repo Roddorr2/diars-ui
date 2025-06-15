@@ -28,6 +28,9 @@
       [(ngModel)]="searchTerm"
       (input)="filtrarProductos()"
     />
+    <button (click)="limpiarFiltros()" class="btn-limpiar">
+      Limpiar filtros
+    </button>
   </div>
 
   <!-- Tabla de productos -->
@@ -59,7 +62,7 @@
           <td>
             {{
               producto.subcategoria
-                ? producto.subcategoria.nombre
+                ? producto.subcategoria.nombre.toUpperCase()
                 : "Sin subcategoría"
             }}
           </td>
@@ -112,6 +115,9 @@
           <span class="campo-invalido"
             >Ya existe un producto con ese código</span
           >
+          } @else if (formularioProducto.get('codigo')?.hasError('required') &&
+          formularioProducto.get('codigo')?.touched) {
+          <span class="campo-invalido">El código es requerido</span>
           }
 
           <div class="form-group">
@@ -167,6 +173,9 @@
           @if (formularioProducto.get('stock')?.hasError('required') &&
           formularioProducto.get('stock')?.touched) {
           <span class="campo-invalido">El stock es requerido</span>
+          } @else if (formularioProducto.get('stock')?.hasError('min') &&
+          formularioProducto.get('stock')?.touched) {
+          <span class="campo-invalido">El stock debe ser mayor a cero</span>
           }
 
           <div class="form-group">
@@ -176,6 +185,9 @@
           @if (formularioProducto.get('precioUnitario')?.hasError('required') &&
           formularioProducto.get('precioUnitario')?.touched) {
           <span class="campo-invalido">El precio unitario es requerido</span>
+          } @else if (formularioProducto.get('precioUnitario')?.hasError('min')
+          && formularioProducto.get('precioUnitario')?.touched) {
+          <span class="campo-invalido">El precio debe ser mayor a cero</span>
           }
 
           <div class="form-group">

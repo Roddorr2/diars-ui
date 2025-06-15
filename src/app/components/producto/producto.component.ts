@@ -17,6 +17,8 @@ import {
 import { map, debounceTime, switchMap, first } from "rxjs/operators";
 
 import Swal from "sweetalert2";
+import { of } from "rxjs";
+import { TestRequest } from "@angular/common/http/testing";
 
 @Component({
   selector: "app-producto",
@@ -47,12 +49,18 @@ export class ProductoComponent implements OnInit {
 
   codigoUnicoValidator(): AsyncValidatorFn {
     return (control: AbstractControl) => {
-      return control.valueChanges.pipe(
+      if (!control.value || control.value === 0) return of(null);
+      return this.productoService.existePorCodigo(control.value).pipe(
         debounceTime(300),
-        switchMap((codigo: number) =>
-          this.productoService.existePorCodigo(codigo)
-        ),
-        map((existe: boolean) => (existe ? { codigoExistente: true } : null)),
+        map((existe: boolean) => {
+          if (
+            this.modoEdicion &&
+            this.productoOriginal?.codigo === control.value
+          ) {
+            return null;
+          }
+          return existe ? { codigoExistente: true } : null;
+        }),
         first()
       );
     };
@@ -72,14 +80,14 @@ export class ProductoComponent implements OnInit {
 
   inicializarFormulario(): void {
     this.formularioProducto = this.fb.group({
-      codigo: [0, Validators.required, this.codigoUnicoValidator()],
-      nombre: ["", Validators.required],
-      marca: ["", Validators.required],
+      codigo: [0, [Validators.required], [this.codigoUnicoValidator()]],
+      nombre: ["", [Validators.required]],
+      marca: ["", [Validators.required]],
       descripcion: [""],
-      subcategoria: [null, Validators.required],
-      stock: [0, Validators.required],
-      precioUnitario: [0, Validators.required],
-      unidadMedida: ["", Validators.required],
+      subcategoria: [null, [Validators.required]],
+      stock: [0, [Validators.required, Validators.min(0)]],
+      precioUnitario: [0, [Validators.required, Validators.min(0.1)]],
+      unidadMedida: ["", [Validators.required]],
       estado: [true],
     });
   }
@@ -97,9 +105,14 @@ export class ProductoComponent implements OnInit {
   }
 
   cargarSubcategorias(): void {
-    this.subcategoriaService
-      .listar()
-      .subscribe((data) => (this.subcategorias = data));
+    this.subcategoriaService.listar().subscribe({
+      next: (data) => {
+        this.subcategorias = data;
+      },
+      error: (err) => {
+        console.error("Error al cargar subcategorías:", err);
+      },
+    });
   }
 
   registrar(): void {
@@ -130,9 +143,9 @@ export class ProductoComponent implements OnInit {
   editar(producto: Producto): void {
     this.modoEdicion = true;
     this.productoSeleccionadoId = producto.id;
-    this.mostrarModal = true;
-
     this.productoOriginal = { ...producto };
+
+    this.formularioProducto.reset();
 
     this.formularioProducto.patchValue({
       codigo: producto.codigo,
@@ -145,24 +158,37 @@ export class ProductoComponent implements OnInit {
       unidadMedida: producto.unidadMedida,
       estado: producto.estado,
     });
+
+    this.mostrarModal = true;
   }
 
   actualizar(): void {
-    if (this.formularioProducto.invalid) return;
+    if (this.formularioProducto.invalid) {
+      this.formularioProducto.markAllAsTouched();
+      return;
+    }
 
     const productoActualizado: Producto = {
+      id: this.productoSeleccionadoId,
       ...this.formularioProducto.value,
       subcategoria: {
         id: this.formularioProducto.value.subcategoria,
-      },
+      } as Subcategoria,
+    };
+
+    const productoOriginalComparable = {
+      ...this.productoOriginal,
+      subcategoria: { id: this.productoOriginal?.subcategoria?.id },
+    };
+
+    const productoActualizadoComparable = {
+      ...productoActualizado,
+      subcategoria: { id: productoActualizado.subcategoria.id },
     };
 
     if (
-      JSON.stringify(productoActualizado) ===
-      JSON.stringify({
-        ...this.productoOriginal,
-        subcategoria: { id: this.productoOriginal?.subcategoria?.id },
-      })
+      JSON.stringify(productoActualizadoComparable) ===
+      JSON.stringify(productoOriginalComparable)
     ) {
       Swal.fire({
         icon: "info",
@@ -178,36 +204,61 @@ export class ProductoComponent implements OnInit {
 
     this.productoService
       .modificar(this.productoSeleccionadoId!, productoActualizado)
-      .subscribe(() => {
-        this.cargarProductos();
-        this.cancelar();
+      .subscribe({
+        next: () => {
+          this.cargarProductos();
+          this.cancelar();
+          Swal.fire({
+            title: "¡Actualizado!",
+            text: "El producto se actualizó correctamente.",
+            icon: "success",
+            timer: 2000,
+            showConfirmButton: false,
+            toast: true,
+            position: "top-end",
+          });
+        },
+        error: (err) => {
+          console.error("Error al actualizar producto:", err);
+          Swal.fire({
+            title: "Error",
+            text: "No se pudo actualizar el producto",
+            icon: "error",
+            toast: true,
+            position: "top-end",
+            timer: 3000,
+            showConfirmButton: false,
+          });
+        },
       });
-
-    Swal.fire({
-      title: "¡Actualizado!",
-      text: "El producto se actualizó correctamente.",
-      icon: "success",
-      timer: 2000,
-      showConfirmButton: false,
-      toast: true,
-      position: "top-end",
-    });
   }
-
   abrirModal(): void {
     this.modoEdicion = false;
+    this.productoOriginal = null;
+    this.productoSeleccionadoId = undefined;
     this.formularioProducto.reset();
-    this.formularioProducto.patchValue({ estado: true });
+    this.formularioProducto.patchValue({
+      estado: true,
+      codigo: 0,
+      stock: 0,
+      precioUnitario: 0,
+    });
+
     this.mostrarModal = true;
     this.cargarSubcategorias();
-    this.productoSeleccionadoId = undefined;
   }
 
   cancelar(): void {
     this.formularioProducto.reset();
-    this.formularioProducto.patchValue({ estado: true });
+    this.formularioProducto.patchValue({
+      estado: true,
+      codigo: 0,
+      stock: 0,
+      precioUnitario: 0,
+    });
     this.modoEdicion = false;
     this.productoSeleccionadoId = undefined;
+    this.productoOriginal = null;
     this.mostrarModal = false;
   }
 
@@ -243,12 +294,10 @@ export class ProductoComponent implements OnInit {
   }
 
   filtrarProductos(): void {
-    const termino = this.searchTerm.trim();
+    const termino = this.searchTerm.trim().toLowerCase();
 
     if (termino === "") {
-      this.cargarProductos();
       this.productosFiltrados = [...this.productos];
-      return;
     } else {
       this.productoService.buscarGeneral(termino).subscribe({
         next: (productos) => {
@@ -256,9 +305,19 @@ export class ProductoComponent implements OnInit {
           this.paginaActual = 1;
           this.actualizarPaginacion();
         },
-        error: (err) => console.error(err),
+        error: (err) => {
+          console.error("Error al buscar productos:", err);
+          this.productosFiltrados = this.productos.filter(
+            (p) =>
+              p.nombre.toLowerCase().includes(termino) ||
+              p.marca.toLowerCase().includes(termino) ||
+              p.codigo.toString().includes(termino)
+          );
+        },
       });
     }
+    this.paginaActual = 1;
+    this.actualizarPaginacion();
   }
 
   cambiarPagina(pagina: number): void {
@@ -270,7 +329,7 @@ export class ProductoComponent implements OnInit {
   }
 
   actualizarPaginacion(): void {
-    const base = this.searchTerm ? this.productosFiltrados : this.productos;
+    const base = this.productosFiltrados;
 
     this.totalPaginas = Math.ceil(base.length / this.itemsPorPagina);
     this.paginasArray = Array.from(
@@ -282,6 +341,13 @@ export class ProductoComponent implements OnInit {
     const fin = inicio + this.itemsPorPagina;
 
     this.productosPaginados = base.slice(inicio, fin);
+  }
+
+  limpiarFiltros(): void {
+    this.searchTerm = "";
+    this.productosFiltrados = [...this.productos];
+    this.paginaActual = 1;
+    this.actualizarPaginacion();
   }
 
   onItemsPorPaginaChange(): void {
