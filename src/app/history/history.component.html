@@ -1,0 +1,167 @@
+<div class="container">
+  <header class="header-top">
+    <button (click)="volver()" aria-label="Volver" class="btn-volver">
+      <svg
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <polyline points="15 18 9 12 15 6"></polyline>
+      </svg>
+    </button>
+    <img src="/logo.png" alt="Logo Empresa" class="logo" />
+    <h1>Historial de acciones</h1>
+  </header>
+
+  <!-- Sección de filtros organizada -->
+  <div class="filtros-container">
+    <h3>Filtros de búsqueda</h3>
+
+    <div class="filtros-grid">
+      <!-- Fila 1: Búsqueda por usuario -->
+      <div class="filtro-group">
+        <label for="searchTerm">Buscar usuario</label>
+        <input
+          type="text"
+          id="searchTerm"
+          class="form-control"
+          [(ngModel)]="searchTerm"
+          (input)="filtrarHistorial()"
+          placeholder="Escriba el nombre del usuario..."
+        />
+      </div>
+
+      <!-- Fila 2: Selectores -->
+      <div class="filtro-group">
+        <label for="filtroTipoAccion">Tipo de acción</label>
+        <select
+          class="form-control"
+          id="filtroTipoAccion"
+          [(ngModel)]="tipoAccionSeleccionada"
+          (change)="filtrarHistorial()"
+        >
+          <option [ngValue]="null">Todas las acciones</option>
+          @for (accion of tipoAcciones; track accion.value) {
+          <option [ngValue]="accion.value">{{ accion.label }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="filtro-group">
+        <label for="filtroModulo">Módulo</label>
+        <select
+          class="form-control"
+          id="filtroModulo"
+          [(ngModel)]="moduloSeleccionado"
+          (change)="filtrarHistorial()"
+        >
+          <option [ngValue]="null">Todos los módulos</option>
+          @for (modulo of modulos; track modulo.value) {
+          <option [ngValue]="modulo.value">{{ modulo.label }}</option>
+          }
+        </select>
+      </div>
+
+      <!-- Fila 3: Fechas -->
+      <div class="filtro-group">
+        <label for="fechaInicio">Fecha desde</label>
+        <input
+          type="date"
+          id="fechaInicio"
+          class="form-control"
+          [(ngModel)]="fechaInicio"
+          (change)="filtrarHistorial()"
+        />
+      </div>
+
+      <div class="filtro-group">
+        <label for="fechaFin">Fecha hasta</label>
+        <input
+          type="date"
+          id="fechaFin"
+          class="form-control"
+          [(ngModel)]="fechaFin"
+          (change)="filtrarHistorial()"
+        />
+      </div>
+    </div>
+
+    <!-- Botón de limpiar filtros -->
+    <div class="filtros-actions">
+      <button (click)="limpiarFiltros()" class="btn-limpiar">
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <path d="M3 6h18"></path>
+          <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+          <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+        </svg>
+        Limpiar filtros
+      </button>
+    </div>
+  </div>
+
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>Módulo</th>
+          <th>Acción</th>
+          <th>Descripción</th>
+          <th>Fecha</th>
+          <th>Usuario</th>
+        </tr>
+      </thead>
+      <tbody>
+        @if (historial.length > 0) {@for(h of historialesPaginados; track h.id)
+        {
+        <tr>
+          <td>{{ h.modulo | modulo }}</td>
+          <td>{{ h.tipoAccion | tipoAccion }}</td>
+          <td>{{ h.descripcion }}</td>
+          <td>{{ h.fecha | date : "dd/MM/yyyy HH:mm:ss" }}</td>
+          <td>{{ h.usuario.nombre }}</td>
+        </tr>
+        }} @else {
+        <tr>
+          <td colspan="5" class="no-data">No hay acciones registradas</td>
+        </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  @if (totalPaginas > 1) {
+  <nav>
+    <ul class="pagination justify-content-center">
+      <li class="page-item" [class.disabled]="paginaActual === 1">
+        <a class="page-link" (click)="cambiarPagina(paginaActual - 1)">
+          Anterior
+        </a>
+      </li>
+      @for (pagina of paginasArray; track $index) {
+      <li class="page-item" [class.active]="paginaActual === pagina">
+        <a class="page-link" (click)="cambiarPagina(pagina)">
+          {{ pagina }}
+        </a>
+      </li>
+      }
+      <li class="page-item" [class.disabled]="paginaActual === totalPaginas">
+        <a class="page-link" (click)="cambiarPagina(paginaActual + 1)">
+          Siguiente
+        </a>
+      </li>
+    </ul>
+  </nav>
+  }
+</div>
