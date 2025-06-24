@@ -162,6 +162,7 @@ export class UsuarioComponent implements OnInit {
         [this.correoUnicoValidator()],
       ],
       cargo: [null, Validators.required],
+      contrasena: ["", [Validators.required]],
       estado: [true],
     });
   }
@@ -233,6 +234,7 @@ export class UsuarioComponent implements OnInit {
       nombre: usuario.nombre,
       correo: usuario.correo,
       cargo: usuario.cargo?.id,
+      contrasena: "",
       estado: usuario.estado,
     });
 

@@ -30,7 +30,7 @@ export class CargoService {
   }
 
   actualizarCargo(id: number, cargo: Cargo): Observable<Cargo> {
-    return this.http.get<Cargo>(`${this.apiUrl}/${id}`);
+    return this.http.put<Cargo>(`${this.apiUrl}/${id}`, cargo);
   }
 
   obtenerCargoPorId(id: number): Observable<Cargo> {

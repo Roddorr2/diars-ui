@@ -5,7 +5,6 @@ import { Modulo } from "../models/modulo.enum";
   name: "modulo",
   standalone: true,
 })
-// @Injectable({ providedIn: "root" })
 export class ModuloPipe implements PipeTransform {
   transform(value: Modulo): string {
     switch (value) {
@@ -23,6 +22,8 @@ export class ModuloPipe implements PipeTransform {
         return "Categoría";
       case Modulo.SUBCATEGORIA:
         return "Subcategoría";
+      case Modulo.HISTORIAL:
+        return "Historial";
       default:
         return "Desconocido";
     }

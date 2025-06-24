@@ -5,7 +5,7 @@ import { TipoAccion } from "../models/tipoAccion.enum";
   name: "tipoAccion",
   standalone: true,
 })
-// @Injectable({ providedIn: "root" })
+
 export class TipoAccionPipe implements PipeTransform {
   transform(value: TipoAccion): string {
     switch (value) {

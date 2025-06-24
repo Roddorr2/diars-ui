@@ -22,6 +22,11 @@ export const routes: Routes = [
       import("./components/components.routes").then((m) => m.COMPONENTS_ROUTES),
   },
   {
+    path: "logistics",
+    loadChildren: () =>
+      import("./logistics/logistics.routes").then((m) => m.LOGISTICS_ROUTES),
+  },
+  {
     path: "history",
     component: HistoryComponent,
   },

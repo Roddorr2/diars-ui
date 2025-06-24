@@ -1,4 +1,3 @@
-// src/app/components/components.routes.ts
 import { Routes } from "@angular/router";
 import { ProductoComponent } from "./producto/producto.component";
 import { SubcategoriaComponent } from "./subcategoria/subcategoria.component";
@@ -8,7 +7,6 @@ import { CargoComponent } from "./cargo/cargo.component";
 import { ProveedorComponent } from "./proveedor/proveedor.component";
 import { UsuarioComponent } from "./usuario/usuario.component";
 
-// Exportamos un array de Rutas, que será cargado perezosamente por el archivo principal
 export const COMPONENTS_ROUTES: Routes = [
   { path: "producto", component: ProductoComponent },
   { path: "subcategoria", component: SubcategoriaComponent },

@@ -156,7 +156,7 @@ export class CargoComponent implements OnInit {
       });
     Swal.fire({
       title: "¡Actualizado!",
-      text: "La categoría se actualizó correctamente.",
+      text: "El cargo se actualizó correctamente.",
       icon: "success",
       timer: 2000,
       showConfirmButton: false,
