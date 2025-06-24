@@ -1,0 +1,184 @@
+<div class="container">
+  <header class="header-top">
+    <button (click)="volver()" aria-label="Volver" class="btn-volver">
+      <svg
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <polyline points="15 18 9 12 15 6"></polyline>
+      </svg>
+    </button>
+    <img src="/logo.png" alt="Logo Empresa" class="logo" />
+    <h1>Órdenes de Compra</h1>
+  </header>
+
+  <!-- Sección de filtros organizada-->
+  <div class="filtros-container">
+    <h3>Filtros de búsqueda</h3>
+    <div class="filtros-grid">
+      <!-- Fila 1: Búsqueda por proveedor -->
+      <div class="filtro-group">
+        <label for="searchTerm">Buscar proveedores</label>
+        <input
+          type="text"
+          id="searchTerm"
+          class="form-control"
+          [(ngModel)]="searchTerm"
+          (input)="filtrarOrdenes()"
+          placeholder="Escriba el nombre del proveedor..."
+        />
+      </div>
+
+      <!-- Fila 2: Selectores -->
+      <div class="filtro-group">
+        <label for="filtroEstado">Estado</label
+        ><select
+          class="form-control"
+          id="filtroEstado"
+          [(ngModel)]="estadoSeleccionado"
+          (change)="filtrarOrdenes()"
+        >
+          <option [ngValue]="null">Cualquier estado</option>
+          @for (estado of estadosOperacion; track estado.value) {
+          <option [ngValue]="estado.value">{{ estado.label }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="filtro-group">
+        <label for="fechaInicio">Fecha desde</label>
+        <input
+          type="date"
+          id="fechaInicio"
+          class="form-control"
+          [(ngModel)]="fechaInicio"
+          (change)="filtrarOrdenes()"
+        />
+      </div>
+
+      <div class="filtro-group">
+        <label for="fechaFin">Fecha hasta</label>
+        <input
+          type="date"
+          id="fechaFin"
+          class="form-control"
+          [(ngModel)]="fechaFin"
+          (change)="filtrarOrdenes()"
+        />
+      </div>
+
+      <div class="filtros-actions">
+        <button class="btn agregar" (click)="abrirModal()">
+          Registrar orden de compra
+        </button>
+
+        <button (click)="limpiarFiltros()" class="btn-limpiar">
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path d="M3 6h18"></path>
+            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+          </svg>
+          Limpiar filtros
+        </button>
+      </div>
+    </div>
+
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Proveedor</th>
+            <th>Fecha</th>
+            <th>Producto</th>
+            <th>Precio</th>
+            <th>Cantidad</th>
+            <th>Total</th>
+            <th>Estado</th>
+            <th>Observaciones</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (ordenDetallePaginada.length > 0) {@for(od of
+          ordenDetallePaginada; track od.producto) {
+          <tr>
+            <td>{{ od.proveedor }}</td>
+            <td>{{ od.fecha }}</td>
+            <td>{{ od.producto }}</td>
+            <td>{{ od.precioUnitario }}</td>
+            <td>{{ od.cantidad }}</td>
+            <td>{{ od.total }}</td>
+            <td>{{ od.estadoOperacion }}</td>
+            <td>{{ od.observaciones }}</td>
+            <td>
+              <button>✏️ Editar</button>
+              <button>Cambiar estado</button>
+            </td>
+          </tr>
+          }} @else {
+          <tr>
+            <td class="no-data">No hay órdenes de compra disponibles</td>
+          </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+  @if (mostrarModal) {
+  <div class="modal-backdrop">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>
+          {{
+            modoEdicion ? "Editar Orden de Compra" : "Registrar Orden de Compra"
+          }}
+        </h2>
+      </div>
+      <form
+        [formGroup]="formularioOrdenCompra"
+        (ngSubmit)="modoEdicion ? actualizar() : registrar()"
+        class="form-group"
+      >
+        <div class="form-grid">
+          <div class="form-group"></div>
+        </div>
+      </form>
+    </div>
+  </div>
+  } @if (totalPaginas > 1) {
+  <nav>
+    <ul class="pagination justify-content-center">
+      <li class="page-item" [class.disabled]="paginaActual === 1">
+        <a class="page-link" (click)="cambiarPagina(paginaActual - 1)">
+          Anterior
+        </a>
+      </li>
+      @for (pagina of paginasArray; track $index) {
+      <li class="page-item" [class.active]="paginaActual === pagina">
+        <a class="page-link" (click)="cambiarPagina(pagina)">
+          {{ pagina }}
+        </a>
+      </li>
+      }
+      <li class="page-item" [class.disabled]="paginaActual === totalPaginas">
+        <a class="page-link" (click)="cambiarPagina(paginaActual + 1)">
+          Siguiente
+        </a>
+      </li>
+    </ul>
+  </nav>
+  }
+</div>
