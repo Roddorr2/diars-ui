@@ -16,6 +16,7 @@
 /out-tsc
 
 # misc
+src/assets
 .sass-cache
 /connect.lock
 /logs
