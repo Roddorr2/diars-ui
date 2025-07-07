@@ -1,1 +1,24 @@
 /* You can add global styles to this file, and also import other style files */
+:root {
+  --color-primario: #089151;
+  --color-primario-hover: #066a3a;
+  --color-acento: #fddb0a;
+  --color-acento-hover: #e6c806;
+  --color-inactivo: #e74c3c;
+  --color-gris: #6c757d;
+
+  --color-texto: #333;
+  --color-borde: #ddd;
+  --color-borde-suave: #dee2e6;
+  --color-placeholder: #6c757d;
+
+  --fondo-blanco: #ffffff;
+  --fondo-claro: #f8f9fa;
+  --fondo-gris: #fefefe;
+
+  --fuente-base: "Roboto", Tahoma, Geneva, Verdana, sans-serif;
+
+  --radio: 14px;
+  --sombra: 0 8px 25px rgba(8, 145, 81, 0.2);
+  --transicion: 0.3s ease;
+}
