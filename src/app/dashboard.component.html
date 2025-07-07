@@ -1,10 +1,10 @@
-<!-- NAVBAR SUPERIOR -->
 <nav class="navbar">
   <div class="navbar-left">
     <img src="/logo.png" alt="Logo Tai Loy" class="navbar-logo" />
     <span class="navbar-title">Gestión de Inventario</span>
   </div>
   <div class="navbar-right">
+    <span class="username-badge">👤 {{ username }}</span>
     <button (click)="cerrarSesion()" class="logout-button">
       <span class="icon">🚪</span>
       <span class="label">Cerrar Sesión</span>
@@ -12,10 +12,11 @@
   </div>
 </nav>
 
-<!-- CONTENIDO PRINCIPAL -->
 <main class="dashboard-container">
   <section class="welcome-section">
-    <h1>Bienvenido al Sistema de Gestión de Inventario</h1>
+    <h1>
+      Bienvenido, <span class="username-color">{{ username }}</span> 🌟
+    </h1>
     <p>Selecciona una opción para comenzar</p>
   </section>
 
@@ -61,7 +62,7 @@
     </button>
 
     <button routerLink="/logistics/despacho" class="dashboard-button">
-      <div class="icon">💰</div>
+      <div class="icon">📦📤</div>
       <div class="label">Despachos</div>
     </button>
 
@@ -69,10 +70,19 @@
       <div class="icon">📝</div>
       <div class="label">Auditoría</div>
     </button>
+
+    <button routerLink="/warehouse" class="dashboard-button">
+      <div class="icon">🏬</div>
+      <div class="label">Almacén</div>
+    </button>
+
+    <button routerLink="/inventory" class="dashboard-button">
+      <div class="icon">🔄📦</div>
+      <div class="label">Movimiento de Inventario</div>
+    </button>
   </section>
 </main>
 
-<!-- FOOTER -->
 <footer class="footer">
   <p>&copy; 2025 Tai Loy S.A. Todos los derechos reservados.</p>
 </footer>
