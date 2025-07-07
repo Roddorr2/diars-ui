@@ -1,0 +1,156 @@
+<div class="container">
+  <header class="header-top">
+    <button (click)="volver()" aria-label="Volver" class="btn-volver">
+      <svg
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <polyline points="15 18 9 12 15 6"></polyline>
+      </svg>
+    </button>
+    <img src="/logo.png" alt="Logo Empresa" class="logo" />
+    <h1>Movimientos de Inventario</h1>
+  </header>
+
+  <div class="filtros-container">
+    <h3>Filtros de búsqueda</h3>
+    <div class="filtros-grid">
+      <div class="filtro-group">
+        <label for="searchTermProducto">Buscar productos</label>
+        <input
+          type="text"
+          id="searchTermProducto"
+          class="form-control"
+          [(ngModel)]="searchTermProducto"
+          (input)="filtrarMovimientos()"
+          placeholder="Busque un producto..."
+        />
+      </div>
+
+      <div class="filtro-group">
+        <label for="searchTermUsuario">Buscar usuarios</label>
+        <input
+          type="text"
+          id="searchTermUsuario"
+          class="form-control"
+          [(ngModel)]="searchTermUsuario"
+          (input)="filtrarMovimientos()"
+          placeholder="Busque un usuario..."
+        />
+      </div>
+
+      <div class="filtro-group">
+        <label for="filtroEstado">Estado</label
+        ><select
+          class="form-control"
+          id="filtroEstado"
+          [(ngModel)]="tipoSeleccionado"
+          (change)="filtrarMovimientos()"
+        >
+          <option [ngValue]="null">Cualquier movimiento</option>
+          @for (tipo of tiposMovimiento; track tipo.value) {
+          <option [ngValue]="tipo.value">{{ tipo.label }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="filtro-group">
+        <label for="fechaInicio">Fecha desde</label>
+        <input
+          type="date"
+          id="fechaInicio"
+          class="form-control"
+          [(ngModel)]="fechaInicio"
+          (change)="filtrarMovimientos()"
+        />
+      </div>
+
+      <div class="filtro-group">
+        <label for="fechaFin">Fecha hasta</label>
+        <input
+          type="date"
+          id="fechaFin"
+          class="form-control"
+          [(ngModel)]="fechaFin"
+          (change)="filtrarMovimientos()"
+        />
+      </div>
+    </div>
+    <div class="filtros-actions">
+      <button (click)="limpiarFiltros()" class="btn-limpiar">
+        Limpiar filtros
+      </button>
+    </div>
+  </div>
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>ID de Movimiento</th>
+          <th>Producto</th>
+          <th>Fecha</th>
+          <th>Tipo Movimiento</th>
+          <th>Cantidad</th>
+          <th>Usuario</th>
+          <th>Descargar</th>
+        </tr>
+      </thead>
+      <tbody>
+        @if (movimientosDetalle.length > 0) { @for (movimiento of
+        movimientosDetallePaginados; track $index) {
+        <tr>
+          <td>{{ movimiento.id }}</td>
+          <td>{{ movimiento.producto }}</td>
+
+          <td>{{ movimiento.fecha }}</td>
+          <td>{{ movimiento.tipoMovimiento }}</td>
+          <td>{{ movimiento.cantidad }}</td>
+          <td>{{ movimiento.usuario }}</td>
+          <td>
+            <button
+              class="exportar"
+              (click)="exportarMovimiento(movimiento.id)"
+            >
+              Descargar
+            </button>
+          </td>
+        </tr>
+
+        } } @else {
+        <tr>
+          <td colspan="7">No se encontraron movimientos.</td>
+        </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  @if (totalPaginas > 1) {
+  <nav>
+    <ul class="pagination justify-content-center">
+      <li class="page-item" [class.disabled]="paginaActual === 1">
+        <a class="page-link" (click)="cambiarPagina(paginaActual - 1)">
+          Anterior
+        </a>
+      </li>
+      @for (pagina of paginasArray; track $index) {
+      <li class="page-item" [class.active]="paginaActual === pagina">
+        <a class="page-link" (click)="cambiarPagina(pagina)">
+          {{ pagina }}
+        </a>
+      </li>
+      }
+      <li class="page-item" [class.disabled]="paginaActual === totalPaginas">
+        <a class="page-link" (click)="cambiarPagina(paginaActual + 1)">
+          Siguiente
+        </a>
+      </li>
+    </ul>
+  </nav>
+  }
+</div>
