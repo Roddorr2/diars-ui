@@ -1,0 +1,110 @@
+<div class="container">
+  <header class="header-top">
+    <button (click)="volver()" aria-label="Volver" class="btn-volver">
+      <svg
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <polyline points="15 18 9 12 15 6"></polyline>
+      </svg>
+    </button>
+    <img src="/logo.png" alt="Logo Empresa" class="logo" />
+    <h1>Almacén</h1>
+  </header>
+
+  <div class="filtros-container">
+    <h3>Filtros de búsqueda</h3>
+    <div class="filtros-grid">
+      <div class="filtro-group">
+        <label for="filtroTipoAlmacen">Tipo Almacén</label>
+        <select
+          class="form-control"
+          id="filtroTipoAlmacen"
+          [(ngModel)]="tipoAlmacenSeleccionado"
+          (change)="filtrarAlmacenes()"
+        >
+          <option [ngValue]="null">Cualquier tipo almacén</option>
+          @for (tipoA of tiposAlmacen; track tipoA.value) {
+          <option [ngValue]="tipoA.value">{{ tipoA.label }}</option>
+          }
+        </select>
+      </div>
+
+      <button (click)="limpiarFiltros()" class="btn-limpiar">
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <path d="M3 6h18"></path>
+          <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+          <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+        </svg>
+        Limpiar filtros
+      </button>
+    </div>
+  </div>
+
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>ID de Almacén</th>
+          <th>Producto</th>
+          <th>Código</th>
+          <th>Cantidad</th>
+          <th>Tipo de almacén</th>
+        </tr>
+      </thead>
+      <tbody>
+        @if (almacenDetallePaginado.length > 0) { @for (ad of
+        almacenDetallePaginado; track $index) {
+        <tr>
+          <td>{{ ad.id }}</td>
+          <td>{{ ad.producto }}</td>
+          <td>{{ ad.codigo }}</td>
+          <td>{{ ad.cantidad }}</td>
+          <td>{{ ad.tipoAlmacen }}</td>
+        </tr>
+        } } @else {
+        <tr>
+          <td colspan="4" class="no-data">No hay movimientos disponibles</td>
+        </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  @if (totalPaginas > 1) {
+  <nav>
+    <ul class="pagination justify-content-center">
+      <li class="page-item" [class.disabled]="paginasActual === 1">
+        <a class="page-link" (click)="cambiarPagina(paginasActual - 1)">
+          Anterior
+        </a>
+      </li>
+      @for (pagina of paginasArray; track $index) {
+      <li class="page-item" [class.active]="paginasActual === pagina">
+        <a class="page-link" (click)="cambiarPagina(pagina)">
+          {{ pagina }}
+        </a>
+      </li>
+      }
+      <li class="page-item" [class.disabled]="paginasActual === totalPaginas">
+        <a class="page-link" (click)="cambiarPagina(paginasActual + 1)">
+          Siguiente
+        </a>
+      </li>
+    </ul>
+  </nav>
+  }
+</div>
