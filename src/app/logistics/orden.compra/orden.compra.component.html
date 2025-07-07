@@ -18,29 +18,25 @@
     <h1>Órdenes de Compra</h1>
   </header>
 
-  <!-- Sección de filtros organizada-->
   <div class="filtros-container">
     <h3>Filtros de búsqueda</h3>
     <div class="filtros-grid">
-      <!-- Fila 1: Búsqueda por proveedor -->
       <div class="filtro-group">
-        <label for="searchTerm">Buscar proveedores</label>
+        <label for="searchTerm">Buscar observaciones</label>
         <input
           type="text"
           id="searchTerm"
           class="form-control"
           [(ngModel)]="searchTerm"
           (input)="filtrarOrdenes()"
-          placeholder="Escriba el nombre del proveedor..."
+          placeholder="Describa la observación..."
         />
       </div>
 
-      <!-- Fila 2: Selectores -->
       <div class="filtro-group">
         <label for="filtroEstado">Estado</label
         ><select
           class="form-control"
-          id="filtroEstado"
           [(ngModel)]="estadoSeleccionado"
           (change)="filtrarOrdenes()"
         >
@@ -95,48 +91,80 @@
         </button>
       </div>
     </div>
-
-    <div class="table-container">
-      <table>
-        <thead>
-          <tr>
-            <th>Proveedor</th>
-            <th>Fecha</th>
-            <th>Producto</th>
-            <th>Precio</th>
-            <th>Cantidad</th>
-            <th>Total</th>
-            <th>Estado</th>
-            <th>Observaciones</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          @if (ordenDetallePaginada.length > 0) {@for(od of
-          ordenDetallePaginada; track od.producto) {
-          <tr>
-            <td>{{ od.proveedor }}</td>
-            <td>{{ od.fecha }}</td>
-            <td>{{ od.producto }}</td>
-            <td>{{ od.precioUnitario }}</td>
-            <td>{{ od.cantidad }}</td>
-            <td>{{ od.total }}</td>
-            <td>{{ od.estadoOperacion }}</td>
-            <td>{{ od.observaciones }}</td>
-            <td>
-              <button>✏️ Editar</button>
-              <button>Cambiar estado</button>
-            </td>
-          </tr>
-          }} @else {
-          <tr>
-            <td class="no-data">No hay órdenes de compra disponibles</td>
-          </tr>
-          }
-        </tbody>
-      </table>
-    </div>
   </div>
+
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>Proveedor</th>
+          <th>Fecha</th>
+          <th>Producto</th>
+          <th>Precio</th>
+          <th>Cantidad</th>
+          <th>Total</th>
+          <th>Estado</th>
+          <th>Observaciones</th>
+          <th>Acciones</th>
+          <th>Decisiones</th>
+          <th>Descargar</th>
+        </tr>
+      </thead>
+      <tbody>
+        @if (ordenDetallePaginada.length > 0) {@for(od of ordenDetallePaginada;
+        track $index) {
+        <tr>
+          <td>{{ od.proveedor }}</td>
+          <td>{{ od.fecha }}</td>
+          <td>{{ od.producto }}</td>
+          <td>{{ od.precioUnitario | currency : "s/." }}</td>
+          <td>{{ od.cantidad }}</td>
+          <td>{{ od.precioUnitario * od.cantidad | currency : "s/." }}</td>
+          <td>{{ od.estadoOperacion }}</td>
+          <td>{{ od.observaciones }}</td>
+          <td>
+            <button class="editar" (click)="editar(od)">✏️ Editar</button>
+            <button
+              class="cancelar"
+              (click)="cambiarEstado(od, 0)"
+              [disabled]="od.estadoOperacion !== 'Pendiente'"
+            >
+              Cancelar
+            </button>
+          </td>
+          <td>
+            <button
+              class="aprobar"
+              [disabled]="od.estadoOperacion !== 'Pendiente'"
+              (click)="cambiarEstado(od, 2)"
+            >
+              Aprobar
+            </button>
+            <button
+              class="cancelar"
+              [disabled]="od.estadoOperacion !== 'Pendiente'"
+              (click)="cambiarEstado(od, 3)"
+            >
+              Rechazar
+            </button>
+          </td>
+          <td>
+            <button class="exportar" (click)="exportarOrdenCompra(od.id)">
+              Exportar
+            </button>
+          </td>
+        </tr>
+        }} @else {
+        <tr>
+          <td colspan="11" class="no-data">
+            No hay órdenes de compra disponibles
+          </td>
+        </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
   @if (mostrarModal) {
   <div class="modal-backdrop">
     <div class="modal">
@@ -147,13 +175,141 @@
           }}
         </h2>
       </div>
+
       <form
         [formGroup]="formularioOrdenCompra"
         (ngSubmit)="modoEdicion ? actualizar() : registrar()"
         class="form-group"
       >
         <div class="form-grid">
-          <div class="form-group"></div>
+          <div class="form-group">
+            <label for="proveedor">Proveedor</label>
+            <select
+              id="proveedor"
+              formControlName="proveedor"
+              class="form-control"
+            >
+              <option [ngValue]="null">-- Seleccionar --</option>
+              @for (proveedor of proveedores; track proveedor.id) {
+              <option [ngValue]="proveedor.id">{{ proveedor.nombre }}</option>
+              }
+            </select>
+            @if (formularioOrdenCompra.get('proveedor')?.hasError('required') &&
+            formularioOrdenCompra.get('proveedor')?.touched) {
+            <span class="campo-invalido">El proveedor es requerido</span>
+            }
+          </div>
+
+          <div class="form-group">
+            <label for="fecha">Fecha</label>
+            <input
+              type="date"
+              id="fecha"
+              formControlName="fecha"
+              class="form-control"
+            />
+            @if (formularioOrdenCompra.get('fecha')?.hasError('required') &&
+            formularioOrdenCompra.get('fecha')?.touched) {
+            <span class="campo-invalido">La fecha es requerida</span>
+            }
+          </div>
+
+          <div class="form-group">
+            <label for="estadoOperacion">Estado</label>
+            <input
+              type="text"
+              id="estadoOperacion"
+              class="form-control"
+              [value]="
+                obtenerEstadoTexto(
+                  formularioOrdenCompra.get('estadoOperacion')?.value
+                )
+              "
+              readonly
+              style="background-color: #f8f9fa; cursor: not-allowed"
+            />
+            <input type="hidden" formControlName="estadoOperacion" />
+          </div>
+
+          <div formArrayName="productos" class="form-group">
+            <h3>Productos</h3>
+            @for (p of productos.controls; track $index) {
+            <div [formGroupName]="$index" class="producto-form">
+              <h4>Producto {{ $index + 1 }}</h4>
+
+              <label for="producto">Producto</label>
+              <select formControlName="producto" class="form-control">
+                <option [ngValue]="null">Seleccione producto</option>
+                @for (producto of producto; track producto.id) {
+                <option [ngValue]="producto.id">{{ producto.nombre }}</option>
+                }
+              </select>
+              @if (p.get('producto')?.hasError('required') &&
+              p.get('producto')?.touched) {
+              <div class="campo-invalido">El producto es requerido</div>
+              }
+
+              <label for="cantidad">Cantidad</label>
+              <input
+                type="number"
+                formControlName="cantidad"
+                class="form-control"
+                min="1"
+              />
+              @if (p.get('cantidad')?.hasError('required') &&
+              p.get('cantidad')?.touched) {
+              <div class="campo-invalido">La cantidad es requerida</div>
+              } @if (p.get('cantidad')?.hasError('min') &&
+              p.get('cantidad')?.touched) {
+              <div class="campo-invalido">La cantidad debe ser mayor a 0</div>
+              }
+
+              <label for="precio">Precio unitario</label>
+              <input
+                type="number"
+                formControlName="precioUnitario"
+                class="form-control"
+                min="0.01"
+                step="0.01"
+              />
+              @if (p.get('precioUnitario')?.hasError('required') &&
+              p.get('precioUnitario')?.touched) {
+              <div class="campo-invalido">El precio es requerido</div>
+              } @if (p.get('precioUnitario')?.hasError('min') &&
+              p.get('precioUnitario')?.touched) {
+              <div class="campo-invalido">El precio debe ser mayor a 0</div>
+              }
+
+              <label for="observaciones">Observaciones</label>
+              <input
+                type="text"
+                formControlName="observaciones"
+                class="form-control"
+                maxlength="200"
+              />
+              @if (p.get('observaciones')?.hasError('required') &&
+              p.get('observaciones')?.touched) {
+              <div class="campo-invalido">Las observaciones son requeridas</div>
+              }
+
+              <button type="button" (click)="eliminarProducto($index)">
+                Eliminar
+              </button>
+            </div>
+            <hr />
+            }
+
+            <button class="add" type="button" (click)="agregarProducto()">
+              Agregar producto
+            </button>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="submit" class="btn-guardar">
+            {{ modoEdicion ? "Actualizar" : "Registrar" }}
+          </button>
+          <button type="button" (click)="cerrarModal()">Cancelar</button>
         </div>
       </form>
     </div>
