@@ -99,8 +99,10 @@
           <div class="form-group">
             <label>Nombre:</label>
             <input type="text" formControlName="nombre" />
-
-            @if
+            @if (formularioSubcategoria.get('nombre')?.hasError('required') &&
+            formularioSubcategoria.get('nombre')?.touched) {
+            <span class="campo-invalido">El nombre es requerido</span>
+            } @else if
             (formularioSubcategoria.get('nombre')?.hasError('nombreExistente')
             && formularioSubcategoria.get('nombre')?.touched) {
             <span class="campo-invalido"
