@@ -31,11 +31,10 @@ export class LoginComponent {
       this.authService.login(this.loginForm.value).subscribe({
         next: (res) => {
           this.authService.guardarToken(res.token);
-          console.log(`Login exitoso ${res}`);
+          localStorage.setItem("username", res.nombre);
           this.router.navigate(["/dashboard"]);
         },
         error: (err) => {
-          console.error(`Error al iniciar sesión ${err}`);
           this.errorMessage = "Correo o contraseña incorrectos.";
         },
       });

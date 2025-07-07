@@ -1,65 +1,46 @@
 import { Component, inject, OnInit } from "@angular/core";
-import { FormBuilder, FormGroup, Validators } from "@angular/forms";
-import { Cargo } from "./../../models/cargo.model";
-import { Router } from "@angular/router";
-import { ReactiveFormsModule } from "@angular/forms";
-import { FormsModule } from "@angular/forms";
 import {
+  FormBuilder,
+  FormGroup,
+  Validators,
   AbstractControl,
   AsyncValidatorFn,
-  ValidationErrors,
+  ReactiveFormsModule,
+  FormsModule,
 } from "@angular/forms";
 import { map, debounceTime, switchMap, first } from "rxjs/operators";
-
-import Swal from "sweetalert2";
-import { CargoService } from "../../services/cargo.service";
 import { of } from "rxjs";
+import { Router } from "@angular/router";
+import Swal from "sweetalert2";
+
+import { Cargo } from "../../models/cargo.model";
+import { CargoService } from "../../services/cargo.service";
 
 @Component({
   selector: "app-cargo",
-  imports: [ReactiveFormsModule, FormsModule],
   templateUrl: "./cargo.component.html",
   styleUrl: "./cargo.component.css",
+  imports: [ReactiveFormsModule, FormsModule],
 })
 export class CargoComponent implements OnInit {
   cargos: Cargo[] = [];
   cargosFiltrados: Cargo[] = [];
-  formularioCargo!: FormGroup;
-  router = inject(Router);
-  searchTerm: string = "";
+  cargosPaginados: Cargo[] = [];
 
+  formularioCargo!: FormGroup;
+
+  searchTerm: string = "";
   paginaActual = 1;
   itemsPorPagina = 5;
   totalPaginas = 0;
   paginasArray: number[] = [];
-  cargosPaginados: Cargo[] = [];
 
   modoEdicion: boolean = false;
   cargoSeleccionadoId?: number;
   mostrarModal: boolean = false;
-
   cargoOriginal: Cargo | null = null;
 
-  nombreUnicoValidator(): AsyncValidatorFn {
-    return (control: AbstractControl) => {
-      if (
-        this.modoEdicion &&
-        this.cargoOriginal &&
-        control.value === this.cargoOriginal.nombre
-      ) {
-        return of(null);
-      }
-
-      return control.valueChanges.pipe(
-        debounceTime(300),
-        switchMap((nombre: string) =>
-          this.cargoService.existeCargoPorNombre(nombre)
-        ),
-        map((existe: boolean) => (existe ? { nombreExistente: true } : null)),
-        first()
-      );
-    };
-  }
+  router = inject(Router);
 
   constructor(private cargoService: CargoService, private fb: FormBuilder) {}
 
@@ -74,6 +55,23 @@ export class CargoComponent implements OnInit {
     });
   }
 
+  nombreUnicoValidator(): AsyncValidatorFn {
+    return (control: AbstractControl) => {
+      if (this.modoEdicion && this.cargoOriginal?.nombre === control.value) {
+        return of(null);
+      }
+
+      return control.valueChanges.pipe(
+        debounceTime(300),
+        switchMap((nombre: string) =>
+          this.cargoService.existeCargoPorNombre(nombre)
+        ),
+        map((existe: boolean) => (existe ? { nombreExistente: true } : null)),
+        first()
+      );
+    };
+  }
+
   cargarCargos(): void {
     this.cargoService.listarCargos().subscribe({
       next: (cargos) => {
@@ -82,29 +80,45 @@ export class CargoComponent implements OnInit {
         this.paginaActual = 1;
         this.actualizarPaginacion();
       },
-      error: (err) => console.error(err),
+      error: () => {
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "No se pudo cargar la lista de cargos",
+        });
+      },
     });
   }
 
   registrar(): void {
-    if (this.formularioCargo.invalid) return;
+    if (this.formularioCargo.invalid) {
+      this.formularioCargo.markAllAsTouched();
+      return;
+    }
 
-    const cargo: Cargo = {
-      ...this.formularioCargo.value,
-    };
-    this.cargoService.registrarCargo(cargo).subscribe(() => {
-      this.cargarCargos();
-      this.cancelar();
-    });
+    const cargo: Cargo = { ...this.formularioCargo.value };
 
-    Swal.fire({
-      title: "¡Registrado!",
-      text: "El cargo se registró correctamente.",
-      icon: "success",
-      timer: 2000,
-      showConfirmButton: false,
-      toast: true,
-      position: "top-end",
+    this.cargoService.registrarCargo(cargo).subscribe({
+      next: () => {
+        this.cargarCargos();
+        this.cancelar();
+        Swal.fire({
+          title: "¡Registrado!",
+          text: "El cargo se registró correctamente.",
+          icon: "success",
+          timer: 2000,
+          showConfirmButton: false,
+          toast: true,
+          position: "top-end",
+        });
+      },
+      error: () => {
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "No se pudo registrar el cargo",
+        });
+      },
     });
   }
 
@@ -112,29 +126,23 @@ export class CargoComponent implements OnInit {
     this.modoEdicion = true;
     this.cargoSeleccionadoId = cargo.id;
     this.mostrarModal = true;
-
     this.cargoOriginal = { ...cargo };
-
-    this.formularioCargo.patchValue({
-      nombre: cargo.nombre,
-    });
+    this.formularioCargo.patchValue({ nombre: cargo.nombre });
   }
 
   actualizar(): void {
-    if (this.formularioCargo.invalid) return;
+    if (this.formularioCargo.invalid) {
+      this.formularioCargo.markAllAsTouched();
+      return;
+    }
 
     const cargoActualizado: Cargo = {
+      id: this.cargoSeleccionadoId!,
       ...this.formularioCargo.value,
-      cargo: {
-        id: this.formularioCargo.value.cargo,
-      },
     };
 
     if (
-      JSON.stringify(cargoActualizado) ===
-      JSON.stringify({
-        ...this.cargoOriginal,
-      })
+      JSON.stringify(cargoActualizado) === JSON.stringify(this.cargoOriginal)
     ) {
       Swal.fire({
         icon: "info",
@@ -150,19 +158,28 @@ export class CargoComponent implements OnInit {
 
     this.cargoService
       .actualizarCargo(this.cargoSeleccionadoId!, cargoActualizado)
-      .subscribe(() => {
-        this.cargarCargos();
-        this.cancelar();
+      .subscribe({
+        next: () => {
+          this.cargarCargos();
+          this.cancelar();
+          Swal.fire({
+            title: "¡Actualizado!",
+            text: "El cargo se actualizó correctamente.",
+            icon: "success",
+            timer: 2000,
+            showConfirmButton: false,
+            toast: true,
+            position: "top-end",
+          });
+        },
+        error: () => {
+          Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: "No se pudo actualizar el cargo",
+          });
+        },
       });
-    Swal.fire({
-      title: "¡Actualizado!",
-      text: "El cargo se actualizó correctamente.",
-      icon: "success",
-      timer: 2000,
-      showConfirmButton: false,
-      toast: true,
-      position: "top-end",
-    });
   }
 
   abrirModal(): void {
@@ -184,18 +201,23 @@ export class CargoComponent implements OnInit {
 
     if (termino === "") {
       this.cargarCargos();
-      this.cargosFiltrados = [...this.cargos];
       return;
-    } else {
-      this.cargoService.buscarPorNombre(termino).subscribe({
-        next: (cargos) => {
-          this.cargosFiltrados = cargos;
-          this.paginaActual = 1;
-          this.actualizarPaginacion();
-        },
-        error: (err) => console.error(err),
-      });
     }
+
+    this.cargoService.buscarPorNombre(termino).subscribe({
+      next: (cargos) => {
+        this.cargosFiltrados = cargos;
+        this.paginaActual = 1;
+        this.actualizarPaginacion();
+      },
+      error: () => {
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "No se pudo buscar por nombre",
+        });
+      },
+    });
   }
 
   cambiarPagina(pagina: number): void {
@@ -206,16 +228,13 @@ export class CargoComponent implements OnInit {
 
   actualizarPaginacion(): void {
     const base = this.cargosFiltrados;
-
     this.totalPaginas = Math.ceil(base.length / this.itemsPorPagina);
     this.paginasArray = Array.from(
       { length: this.totalPaginas },
       (_, i) => i + 1
     );
-
     const inicio = (this.paginaActual - 1) * this.itemsPorPagina;
     const fin = inicio + this.itemsPorPagina;
-
     this.cargosPaginados = base.slice(inicio, fin);
   }
 
@@ -224,7 +243,7 @@ export class CargoComponent implements OnInit {
     this.actualizarPaginacion();
   }
 
-  volver() {
+  volver(): void {
     this.router.navigate(["/dashboard"]);
   }
 }

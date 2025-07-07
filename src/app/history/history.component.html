@@ -18,12 +18,10 @@
     <h1>Historial de acciones</h1>
   </header>
 
-  <!-- Sección de filtros organizada -->
   <div class="filtros-container">
     <h3>Filtros de búsqueda</h3>
 
     <div class="filtros-grid">
-      <!-- Fila 1: Búsqueda por usuario -->
       <div class="filtro-group">
         <label for="searchTerm">Buscar usuario</label>
         <input
@@ -36,7 +34,6 @@
         />
       </div>
 
-      <!-- Fila 2: Selectores -->
       <div class="filtro-group">
         <label for="filtroTipoAccion">Tipo de acción</label>
         <select
@@ -67,7 +64,6 @@
         </select>
       </div>
 
-      <!-- Fila 3: Fechas -->
       <div class="filtro-group">
         <label for="fechaInicio">Fecha desde</label>
         <input
@@ -91,7 +87,6 @@
       </div>
     </div>
 
-    <!-- Botón de limpiar filtros -->
     <div class="filtros-actions">
       <button (click)="limpiarFiltros()" class="btn-limpiar">
         <svg

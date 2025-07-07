@@ -10,7 +10,7 @@ import {
   AsyncValidatorFn,
   ValidationErrors,
 } from "@angular/forms";
-import { map, debounceTime, switchMap, first } from "rxjs/operators";
+import { map, debounceTime, first } from "rxjs/operators";
 
 import Swal from "sweetalert2";
 import { of } from "rxjs";
@@ -141,29 +141,55 @@ export class ProveedorComponent implements OnInit {
         this.paginaActual = 1;
         this.actualizarPaginacion();
       },
-      error: (err) => console.error(err),
+      error: (err) => {
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "No se pudieron cargar los proveedores.",
+          toast: true,
+          position: "top-end",
+          showConfirmButton: false,
+          timer: 2000,
+        });
+      },
     });
   }
 
   registrar(): void {
-    if (this.formularioProveedor.invalid) return;
+    if (this.formularioProveedor.invalid) {
+      this.formularioProveedor.markAllAsTouched();
+      return;
+    }
 
     const proveedor: Proveedor = {
       ...this.formularioProveedor.value,
     };
-    this.proveedorService.registrarProveedor(proveedor).subscribe(() => {
-      this.cargarProveedores();
-      this.cancelar();
-    });
 
-    Swal.fire({
-      title: "¡Registrado",
-      text: "El proveedor se registró correctamente.",
-      icon: "success",
-      timer: 2000,
-      showConfirmButton: false,
-      toast: true,
-      position: "top-end",
+    this.proveedorService.registrarProveedor(proveedor).subscribe({
+      next: () => {
+        this.cargarProveedores();
+        this.cancelar();
+        Swal.fire({
+          title: "¡Registrado!",
+          text: "El proveedor se registró correctamente.",
+          icon: "success",
+          timer: 2000,
+          showConfirmButton: false,
+          toast: true,
+          position: "top-end",
+        });
+      },
+      error: (err) => {
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "No se pudo registrar el proveedor.",
+          toast: true,
+          position: "top-end",
+          timer: 2000,
+          showConfirmButton: false,
+        });
+      },
     });
   }
 
@@ -184,7 +210,10 @@ export class ProveedorComponent implements OnInit {
   }
 
   actualizar(): void {
-    if (this.formularioProveedor.invalid) return;
+    if (this.formularioProveedor.invalid) {
+      this.formularioProveedor.markAllAsTouched();
+      return;
+    }
 
     const proveedorActualizado: Proveedor = {
       id: this.proveedorSeleccionadoId,
@@ -193,9 +222,7 @@ export class ProveedorComponent implements OnInit {
 
     if (
       JSON.stringify(proveedorActualizado) ===
-      JSON.stringify({
-        ...this.proveedorOriginal,
-      })
+      JSON.stringify(this.proveedorOriginal)
     ) {
       Swal.fire({
         icon: "info",
@@ -211,19 +238,32 @@ export class ProveedorComponent implements OnInit {
 
     this.proveedorService
       .actualizarProveedor(this.proveedorSeleccionadoId!, proveedorActualizado)
-      .subscribe(() => {
-        this.cargarProveedores();
-        this.cancelar();
+      .subscribe({
+        next: () => {
+          this.cargarProveedores();
+          this.cancelar();
+          Swal.fire({
+            title: "¡Actualizado!",
+            text: "El proveedor se actualizó correctamente.",
+            icon: "success",
+            timer: 2000,
+            showConfirmButton: false,
+            toast: true,
+            position: "top-end",
+          });
+        },
+        error: (err) => {
+          Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: "No se pudo actualizar el proveedor.",
+            toast: true,
+            position: "top-end",
+            timer: 2000,
+            showConfirmButton: false,
+          });
+        },
       });
-    Swal.fire({
-      title: "¡Actualizado!",
-      text: "El proveedor se actualizó correctamente.",
-      icon: "success",
-      timer: 2000,
-      showConfirmButton: false,
-      toast: true,
-      position: "top-end",
-    });
   }
 
   abrirModal(): void {
@@ -263,15 +303,28 @@ export class ProveedorComponent implements OnInit {
       if (result.isConfirmed) {
         this.proveedorService
           .cambiarEstadoProveedor(proveedor.id!, nuevoEstado)
-          .subscribe(() => {
-            this.cargarProveedores();
-            Swal.fire({
-              title: `Éxito`,
-              text: `El proveedor fue ${accion}do correctamente`,
-              icon: `success`,
-              timer: 2000,
-              showConfirmButton: false,
-            });
+          .subscribe({
+            next: () => {
+              this.cargarProveedores();
+              Swal.fire({
+                title: `Éxito`,
+                text: `El proveedor fue ${accion}do correctamente`,
+                icon: `success`,
+                timer: 2000,
+                showConfirmButton: false,
+              });
+            },
+            error: () => {
+              Swal.fire({
+                title: "Error",
+                text: `No se pudo ${accion}r el proveedor`,
+                icon: "error",
+                toast: true,
+                position: "top-end",
+                showConfirmButton: false,
+                timer: 3000,
+              });
+            },
           });
       }
     });
@@ -282,26 +335,35 @@ export class ProveedorComponent implements OnInit {
 
     if (termino === "") {
       this.proveedoresFiltrados = [...this.proveedores];
-    } else {
-      this.proveedorService.buscarProveedores(termino).subscribe({
-        next: (proveedores) => {
-          this.proveedoresFiltrados = proveedores;
-          this.paginaActual = 1;
-          this.actualizarPaginacion();
-        },
-        error: (err) => {
-          console.error("Error al buscar proveedores:", err);
-          this.proveedoresFiltrados = this.proveedores.filter(
-            (p) =>
-              p.nombre.toLowerCase().includes(termino) ||
-              p.ruc.includes(termino) ||
-              p.telefono.includes(termino)
-          );
-        },
-      });
+      this.actualizarPaginacion();
+      return;
     }
-    this.paginaActual = 1;
-    this.actualizarPaginacion();
+
+    this.proveedorService.buscarProveedores(termino).subscribe({
+      next: (proveedores) => {
+        this.proveedoresFiltrados = proveedores;
+        this.paginaActual = 1;
+        this.actualizarPaginacion();
+      },
+      error: (err) => {
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "No se pudo realizar la búsqueda de proveedores.",
+          toast: true,
+          position: "top-end",
+          timer: 2000,
+          showConfirmButton: false,
+        });
+
+        this.proveedoresFiltrados = this.proveedores.filter(
+          (p) =>
+            p.nombre.toLowerCase().includes(termino) ||
+            p.ruc.includes(termino) ||
+            p.telefono.includes(termino)
+        );
+      },
+    });
   }
 
   cambiarPagina(pagina: number): void {

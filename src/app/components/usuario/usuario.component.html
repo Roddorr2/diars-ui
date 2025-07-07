@@ -77,7 +77,19 @@
             </span>
           </td>
           <td class="acciones">
-            <button class="editar" (click)="editar(usuario)">✏️ Editar</button>
+            <button
+              type="button"
+              class="editar"
+              (click)="editar(usuario)"
+              [disabled]="usuarioActualLogueado?.id === usuario.id"
+              [title]="
+                usuarioActualLogueado?.id === usuario.id
+                  ? 'No puedes editar tu propio usuario'
+                  : 'Editar usuario'
+              "
+            >
+              Editar
+            </button>
             <button
               class="eliminar"
               (click)="cambiarEstado(usuario)"

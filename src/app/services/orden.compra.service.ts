@@ -39,8 +39,14 @@ export class OrdenCompraService {
 
   actualizarEstado(id: number, estado: number): Observable<void> {
     const params = new HttpParams().set("estado", estado.toString());
-    return this.http.put<void>(`${this.baseUrl}/${id}/estado`, null, {
+    return this.http.patch<void>(`${this.baseUrl}/${id}/estado`, null, {
       params,
+    });
+  }
+
+  exportarOrden(id: number): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/exportar/${id}`, {
+      responseType: "blob",
     });
   }
 }

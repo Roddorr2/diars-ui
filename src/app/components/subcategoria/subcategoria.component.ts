@@ -1,31 +1,38 @@
 import { Component, inject, OnInit } from "@angular/core";
-import { FormBuilder, FormGroup, Validators } from "@angular/forms";
-import { Subcategoria } from "../../models/subcategoria.model";
-import { Categoria } from "./../../models/categoria.model";
-import { SubcategoriaService } from "./../../services/subcategoria.service";
-import { Router } from "@angular/router";
-import { ReactiveFormsModule } from "@angular/forms";
-import { FormsModule } from "@angular/forms";
 import {
+  FormBuilder,
+  FormGroup,
+  Validators,
   AbstractControl,
   AsyncValidatorFn,
   ValidationErrors,
+  ReactiveFormsModule,
+  FormsModule,
 } from "@angular/forms";
-import { map, debounceTime, switchMap, first } from "rxjs/operators";
+import { Router } from "@angular/router";
+import { map, debounceTime, switchMap, first, of } from "rxjs";
 
 import Swal from "sweetalert2";
+
+import { Subcategoria } from "../../models/subcategoria.model";
+import { Categoria } from "../../models/categoria.model";
+import { SubcategoriaService } from "../../services/subcategoria.service";
 import { CategoriaService } from "../../services/categoria.service";
 
 @Component({
   selector: "app-subcategoria",
-  imports: [ReactiveFormsModule, FormsModule],
   templateUrl: "./subcategoria.component.html",
   styleUrls: ["./subcategoria.component.css"],
+  imports: [ReactiveFormsModule, FormsModule],
 })
 export class SubcategoriaComponent implements OnInit {
   subcategorias: Subcategoria[] = [];
   subcategoriasFiltradas: Subcategoria[] = [];
+  subcategoriasPaginadas: Subcategoria[] = [];
+
   categorias: Categoria[] = [];
+  categoriaSeleccionadaId: number | null = null;
+
   formularioSubcategoria!: FormGroup;
   router = inject(Router);
   searchTerm: string = "";
@@ -34,28 +41,11 @@ export class SubcategoriaComponent implements OnInit {
   itemsPorPagina = 10;
   totalPaginas = 0;
   paginasArray: number[] = [];
-  subcategoriasPaginadas: Subcategoria[] = [];
 
   modoEdicion: boolean = false;
   subcategoriaSeleccionadaId?: number;
   mostrarModal: boolean = false;
-
   subcategoriaOriginal: Subcategoria | null = null;
-
-  categoriaSeleccionadaId: number | null = null;
-
-  nombreUnicoValidator(): AsyncValidatorFn {
-    return (control: AbstractControl) => {
-      return control.valueChanges.pipe(
-        debounceTime(300),
-        switchMap((nombre: string) =>
-          this.subcategoriaService.existePorNombre(nombre)
-        ),
-        map((existe: boolean) => (existe ? { nombreExistente: true } : null)),
-        first()
-      );
-    };
-  }
 
   constructor(
     private subcategoriaService: SubcategoriaService,
@@ -71,31 +61,76 @@ export class SubcategoriaComponent implements OnInit {
 
   inicializarFormulario(): void {
     this.formularioSubcategoria = this.fb.group({
-      nombre: ["", [Validators.required], this.nombreUnicoValidator()],
+      nombre: ["", [Validators.required], [this.nombreUnicoValidator()]],
       categoria: [null, [Validators.required]],
     });
   }
 
+  nombreUnicoValidator(): AsyncValidatorFn {
+    return (control: AbstractControl) => {
+      const nombre = control.value?.trim();
+      if (!nombre) return of(null);
+
+      return this.subcategoriaService.existePorNombre(nombre).pipe(
+        debounceTime(300),
+        map((existe) => {
+          if (
+            this.modoEdicion &&
+            this.subcategoriaOriginal?.nombre === nombre
+          ) {
+            return null;
+          }
+          return existe ? { nombreExistente: true } : null;
+        }),
+        first()
+      );
+    };
+  }
+
   cargarSubcategorias(): void {
     this.subcategoriaService.listar().subscribe({
-      next: (subcategorias) => {
-        this.subcategorias = subcategorias;
-        this.subcategoriasFiltradas = [...subcategorias];
+      next: (data) => {
+        this.subcategorias = data;
+        this.subcategoriasFiltradas = [...data];
         this.paginaActual = 1;
         this.actualizarPaginacion();
       },
-      error: (err) => console.error(err),
+      error: () => {
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "No se pudieron cargar las subcategorías.",
+          toast: true,
+          position: "top-end",
+          showConfirmButton: false,
+          timer: 2000,
+        });
+      },
     });
   }
 
   cargarCategorias(): void {
-    this.categoriaService
-      .listar()
-      .subscribe((data) => (this.categorias = data));
+    this.categoriaService.listar().subscribe({
+      next: (data) => (this.categorias = data),
+      error: () => {
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "No se pudieron cargar las categorías.",
+          toast: true,
+          position: "top-end",
+          showConfirmButton: false,
+          timer: 2000,
+        });
+      },
+    });
   }
 
   registrar(): void {
-    if (this.formularioSubcategoria.invalid) return;
+    if (this.formularioSubcategoria.invalid) {
+      this.formularioSubcategoria.markAllAsTouched();
+      return;
+    }
 
     const subcategoria: Subcategoria = {
       ...this.formularioSubcategoria.value,
@@ -103,53 +138,67 @@ export class SubcategoriaComponent implements OnInit {
         id: this.formularioSubcategoria.value.categoria,
       } as Categoria,
     };
-    this.subcategoriaService
-      .registrarSubcategoria(subcategoria)
-      .subscribe(() => {
+
+    this.subcategoriaService.registrarSubcategoria(subcategoria).subscribe({
+      next: () => {
         this.cargarSubcategorias();
         this.cancelar();
-      });
-
-    Swal.fire({
-      title: "¡Registrado",
-      text: "La subcategoría se registró correctamente.",
-      icon: "success",
-      timer: 2000,
-      showConfirmButton: false,
-      toast: true,
-      position: "top-end",
+        Swal.fire({
+          title: "¡Registrado!",
+          text: "La subcategoría se registró correctamente.",
+          icon: "success",
+          toast: true,
+          position: "top-end",
+          timer: 2000,
+          showConfirmButton: false,
+        });
+      },
+      error: () => {
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "No se pudo registrar la subcategoría.",
+          toast: true,
+          position: "top-end",
+          showConfirmButton: false,
+          timer: 2000,
+        });
+      },
     });
   }
 
-  editar(subcategoria: Subcategoria): void {
+  editar(sub: Subcategoria): void {
     this.modoEdicion = true;
-    this.subcategoriaSeleccionadaId = subcategoria.id;
-    this.mostrarModal = true;
-
-    this.subcategoriaOriginal = { ...subcategoria };
+    this.subcategoriaSeleccionadaId = sub.id;
+    this.subcategoriaOriginal = { ...sub };
 
     this.formularioSubcategoria.patchValue({
-      nombre: subcategoria.nombre,
-      categoria: subcategoria.categoria?.id,
+      nombre: sub.nombre,
+      categoria: sub.categoria?.id,
     });
+
+    this.mostrarModal = true;
   }
 
   actualizar(): void {
-    if (this.formularioSubcategoria.invalid) return;
+    if (this.formularioSubcategoria.invalid) {
+      this.formularioSubcategoria.markAllAsTouched();
+      return;
+    }
 
     const subcategoriaActualizada: Subcategoria = {
       ...this.formularioSubcategoria.value,
-      categoria: {
-        id: this.formularioSubcategoria.value.categoria,
-      },
+      categoria: { id: this.formularioSubcategoria.value.categoria },
+    };
+
+    const subcategoriaOriginalSimple = {
+      nombre: this.subcategoriaOriginal?.nombre,
+      categoria: { id: this.subcategoriaOriginal?.categoria?.id },
     };
 
     if (
       JSON.stringify(subcategoriaActualizada) ===
-      JSON.stringify({
-        ...this.subcategoriaOriginal,
-        categoria: { id: this.subcategoriaOriginal?.categoria?.id },
-      })
+      JSON.stringify(subcategoriaOriginalSimple)
     ) {
       Swal.fire({
         icon: "info",
@@ -165,27 +214,40 @@ export class SubcategoriaComponent implements OnInit {
 
     this.subcategoriaService
       .actualizar(this.subcategoriaSeleccionadaId!, subcategoriaActualizada)
-      .subscribe(() => {
-        this.cargarSubcategorias();
-        this.cancelar();
+      .subscribe({
+        next: () => {
+          this.cargarSubcategorias();
+          this.cancelar();
+          Swal.fire({
+            title: "¡Actualizado!",
+            text: "La subcategoría se actualizó correctamente.",
+            icon: "success",
+            toast: true,
+            position: "top-end",
+            timer: 2000,
+            showConfirmButton: false,
+          });
+        },
+        error: () => {
+          Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: "No se pudo actualizar la subcategoría.",
+            toast: true,
+            position: "top-end",
+            showConfirmButton: false,
+            timer: 2000,
+          });
+        },
       });
-    Swal.fire({
-      title: "¡Actualizado!",
-      text: "La subcategoría se actualizó correctamente.",
-      icon: "success",
-      timer: 2000,
-      showConfirmButton: false,
-      toast: true,
-      position: "top-end",
-    });
   }
 
   abrirModal(): void {
     this.modoEdicion = false;
     this.formularioSubcategoria.reset();
-    this.mostrarModal = true;
-    this.cargarCategorias();
+    this.formularioSubcategoria.patchValue({ categoria: null });
     this.subcategoriaSeleccionadaId = undefined;
+    this.mostrarModal = true;
   }
 
   cancelar(): void {
@@ -205,7 +267,7 @@ export class SubcategoriaComponent implements OnInit {
     }
 
     const termino = this.searchTerm.trim().toLowerCase();
-    if (termino !== "") {
+    if (termino) {
       resultado = resultado.filter((sub) =>
         sub.nombre.toLowerCase().includes(termino)
       );
@@ -221,7 +283,6 @@ export class SubcategoriaComponent implements OnInit {
   }
 
   filtrarPorCategoria(id: number | null): void {
-    console.log("ID de categoría seleccionada:", id);
     this.categoriaSeleccionadaId = id;
     this.aplicarFiltros();
   }
@@ -234,7 +295,6 @@ export class SubcategoriaComponent implements OnInit {
 
   actualizarPaginacion(): void {
     const base = this.subcategoriasFiltradas;
-
     this.totalPaginas = Math.ceil(base.length / this.itemsPorPagina);
     this.paginasArray = Array.from(
       { length: this.totalPaginas },
@@ -260,7 +320,7 @@ export class SubcategoriaComponent implements OnInit {
     this.actualizarPaginacion();
   }
 
-  volver() {
+  volver(): void {
     this.router.navigate(["/dashboard"]);
   }
 }

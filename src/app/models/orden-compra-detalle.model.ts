@@ -1,4 +1,5 @@
 export interface OrdenCompraDetalle {
+  id: number;
   proveedor: string;
   fecha: Date;
   estadoOperacion: string;

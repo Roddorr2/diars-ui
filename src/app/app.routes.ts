@@ -2,6 +2,8 @@ import { HistoryComponent } from "./history/history.component";
 import { Routes } from "@angular/router";
 import { LoginComponent } from "./login/login.component";
 import { DashboardComponent } from "./dashboard.component";
+import { WarehouseComponent } from "./warehouse/warehouse.component";
+import { InventoryComponent } from "./inventory/inventory.component";
 export const routes: Routes = [
   {
     path: "",
@@ -29,6 +31,14 @@ export const routes: Routes = [
   {
     path: "history",
     component: HistoryComponent,
+  },
+  {
+    path: "warehouse",
+    component: WarehouseComponent,
+  },
+  {
+    path: "inventory",
+    component: InventoryComponent,
   },
   { path: "**", redirectTo: "dashboard" },
 ];
