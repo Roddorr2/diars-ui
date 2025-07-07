@@ -1,49 +1,54 @@
-import { Component, inject, OnInit } from "@angular/core";
+import { Component, OnInit, inject } from "@angular/core";
+import { Router } from "@angular/router";
+import { CommonModule } from "@angular/common";
+import { FormsModule } from "@angular/forms";
+import Swal from "sweetalert2";
+
 import { Usuario } from "../models/usuario.model";
 import { Historial } from "../models/historial.model";
 import { HistorialService } from "../services/historial.service";
 import { UsuarioService } from "../services/usuario.service";
-import { Router } from "@angular/router";
 import { ModuloPipe } from "../pipes/modulo.pipe";
 import { TipoAccionPipe } from "../pipes/tipo-accion.pipe";
-import { CommonModule } from "@angular/common";
-
-import { FormsModule } from "@angular/forms";
 import { TipoAccion } from "../models/tipoAccion.enum";
 import { Modulo } from "../models/modulo.enum";
 
 @Component({
   selector: "app-history",
-  imports: [ModuloPipe, TipoAccionPipe, CommonModule, FormsModule],
   templateUrl: "./history.component.html",
-  styleUrl: "./history.component.css",
+  styleUrls: ["./history.component.css"],
+  imports: [ModuloPipe, TipoAccionPipe, CommonModule, FormsModule],
 })
 export class HistoryComponent implements OnInit {
   historial: Historial[] = [];
   historialFiltrado: Historial[] = [];
+  historialesPaginados: Historial[] = [];
+
   usuarios: Usuario[] = [];
 
-  router = inject(Router);
+  searchTerm = "";
+  fechaInicio = "";
+  fechaFin = "";
+  usuarioSeleccionadoId: number | null = null;
+  tipoAccionSeleccionada: number | null = null;
+  moduloSeleccionado: number | null = null;
 
   paginaActual = 1;
   itemsPorPagina = 10;
   totalPaginas = 0;
   paginasArray: number[] = [];
-  historialesPaginados: Historial[] = [];
 
-  usuarioSeleccionadoId: number | null = null;
-
-  searchTerm: string = "";
-  fechaInicio: string = "";
-  fechaFin: string = "";
-
-  tipoAccionSeleccionada: number | null = null;
-  moduloSeleccionado: number | null = null;
+  router = inject(Router);
 
   constructor(
     private historialService: HistorialService,
     private usuarioService: UsuarioService
   ) {}
+
+  ngOnInit(): void {
+    this.cargarHistorial();
+    this.cargarUsuarios();
+  }
 
   get tipoAcciones(): { label: string; value: number }[] {
     return Object.values(TipoAccion)
@@ -63,27 +68,74 @@ export class HistoryComponent implements OnInit {
       }));
   }
 
-  ngOnInit(): void {
-    this.cargarHistorial();
-    this.cargarUsuarios();
-  }
-
   cargarUsuarios(): void {
-    this.usuarioService
-      .listarUsuarios()
-      .subscribe((data) => (this.usuarios = data));
+    this.usuarioService.listarUsuarios().subscribe({
+      next: (data) => (this.usuarios = data),
+    });
   }
 
   cargarHistorial(): void {
     this.historialService.obtenerTodos().subscribe({
       next: (historial) => {
         this.historial = historial;
-        this.historialFiltrado = historial;
+        this.historialFiltrado = [...historial];
         this.paginaActual = 1;
         this.actualizarPaginacion();
       },
-      error: (err) => console.error(err),
+      error: () => this.alertaError("No se pudo cargar el historial."),
     });
+  }
+
+  filtrarHistorial(): void {
+    this.historialFiltrado = this.historial.filter((h) => {
+      const usuarioNombre = h.usuario.nombre?.toLowerCase() ?? "";
+      const termino = this.searchTerm.toLowerCase();
+
+      const coincideUsuario = termino === "" || usuarioNombre.includes(termino);
+
+      const coincideUsuarioId =
+        this.usuarioSeleccionadoId === null ||
+        h.usuario.id === this.usuarioSeleccionadoId;
+
+      const fechaAccion = new Date(h.fecha);
+      const desde = this.fechaInicio ? new Date(this.fechaInicio) : null;
+      const hasta = this.fechaFin ? new Date(this.fechaFin) : null;
+
+      const coincideFecha =
+        (!desde || fechaAccion >= desde) && (!hasta || fechaAccion <= hasta);
+
+      const coincideTipoAccion =
+        this.tipoAccionSeleccionada === null ||
+        h.tipoAccion === this.tipoAccionSeleccionada;
+
+      const coincideModulo =
+        this.moduloSeleccionado === null ||
+        h.modulo === this.moduloSeleccionado;
+
+      return (
+        coincideUsuario &&
+        coincideUsuarioId &&
+        coincideFecha &&
+        coincideModulo &&
+        coincideTipoAccion
+      );
+    });
+
+    this.paginaActual = 1;
+    this.actualizarPaginacion();
+  }
+
+  limpiarFiltros(): void {
+    this.searchTerm = "";
+    this.fechaInicio = "";
+    this.fechaFin = "";
+    this.usuarioSeleccionadoId = null;
+    this.tipoAccionSeleccionada = null;
+    this.moduloSeleccionado = null;
+
+    this.historialFiltrado = [...this.historial];
+    this.paginaActual = 1;
+    this.actualizarPaginacion();
   }
 
   cambiarPagina(pagina: number): void {
@@ -107,54 +159,19 @@ export class HistoryComponent implements OnInit {
     this.historialesPaginados = base.slice(inicio, fin);
   }
 
-  filtrarHistorial(): void {
-    this.historialFiltrado = this.historial.filter((h) => {
-      const coincideUsuario = h.usuario.nombre
-        .toLowerCase()
-        .includes(this.searchTerm.toLowerCase());
-
-      const coincideUsuarioId =
-        this.usuarioSeleccionadoId === null ||
-        h.usuario.id === this.usuarioSeleccionadoId;
-
-      const fechaAccion = new Date(h.fecha);
-      const desde = this.fechaInicio ? new Date(this.fechaInicio) : null;
-      const hasta = this.fechaFin ? new Date(this.fechaFin) : null;
-
-      const coincideFecha =
-        (!desde || fechaAccion >= desde) && (!hasta || fechaAccion <= hasta);
-
-      const coincideTipoAccion =
-        this.tipoAccionSeleccionada === null ||
-        h.tipoAccion === this.tipoAccionSeleccionada;
-
-      const coincideModulo =
-        this.moduloSeleccionado === null ||
-        h.modulo === this.moduloSeleccionado;
-
-      return (
-        coincideUsuario && coincideFecha && coincideModulo && coincideTipoAccion
-      );
-    });
-
-    this.paginaActual = 1;
-    this.actualizarPaginacion();
-  }
-
-  limpiarFiltros(): void {
-    this.searchTerm = "";
-    this.fechaInicio = "";
-    this.fechaFin = "";
-    this.usuarioSeleccionadoId = null;
-    this.tipoAccionSeleccionada = null;
-    this.moduloSeleccionado = null;
-
-    this.historialFiltrado = [...this.historial];
-    this.paginaActual = 1;
-    this.actualizarPaginacion();
-  }
-
-  volver() {
+  volver(): void {
     this.router.navigate(["/dashboard"]);
+  }
+
+  private alertaError(texto: string): void {
+    Swal.fire({
+      icon: "error",
+      title: "Error",
+      text: texto,
+      toast: true,
+      position: "top-end",
+      timer: 3000,
+      showConfirmButton: false,
+    });
   }
 }
